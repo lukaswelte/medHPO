@@ -1,27 +1,28 @@
 package Main;
 
-import java.io.IOException;
-import java.io.Serializable;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.util.*;
-
 import Main.model.Term;
-import Main.model.Visit;
 import Main.model.TermSearchCandidate;
+import Main.model.Visit;
 import opennlp.tools.postag.POSModel;
 import opennlp.tools.postag.POSTaggerME;
 
 import javax.annotation.Resource;
-import javax.faces.bean.ApplicationScoped;
 import javax.faces.bean.ManagedBean;
 import javax.faces.bean.SessionScoped;
 import javax.naming.Context;
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
 import javax.sql.DataSource;
+import java.io.IOException;
+import java.io.Serializable;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 @ManagedBean(name="HPOController")
 @SessionScoped
@@ -49,7 +50,7 @@ public class HPOController implements Serializable {
      * Retrieve patients and visits while creating the controller
      */
     public HPOController() {
-        Connection klinikConnection = null;
+        Connection klinikConnection;
         visits = null;
         try {
             klinikConnection = getJDBCConnection("java:comp/env/jdbc/klinik");
@@ -72,7 +73,7 @@ public class HPOController implements Serializable {
         String[] tags = tagger.tag( words );
         double[] probs = tagger.probs();
 
-        List<String> result = new ArrayList<String>();
+        List<String> result = new ArrayList<>();
         for( int i = 0; i < tags.length; i++ ) {
             if (tags[i].equals("NN"))
                 result.add(words[i]);
@@ -449,7 +450,7 @@ public class HPOController implements Serializable {
     }
 
     public List<String> autocompleteHPO(String query) {
-        List<String> results = new ArrayList<String>();
+        List<String> results = new ArrayList<>();
 
         HPOController hpoController = new HPOController();
         List<Term> terms = null;
@@ -488,10 +489,10 @@ public class HPOController implements Serializable {
         return visits;
     }
     public int getSelectedVisit() {
-        return this.selectedVisit;
+        return selectedVisit;
     }
     public void setSelectedVisit(int visitId) {
-        this.selectedVisit = visitId;
+        selectedVisit = visitId;
     }
     public String getOutputText() {
         this.posTextToProcess();
