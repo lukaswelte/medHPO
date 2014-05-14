@@ -1,0 +1,328 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="medhpo" default="all">
+  
+  
+  <property file="build.properties"/>
+  <!-- Uncomment the following property if no tests compilation is needed -->
+  <!-- 
+  <property name="skip.tests" value="true"/>
+   -->
+  
+  <!-- Compiler options -->
+  
+  <property name="compiler.debug" value="on"/>
+  <property name="compiler.generate.no.warnings" value="off"/>
+  <property name="compiler.args" value=""/>
+  <property name="compiler.max.memory" value="700m"/>
+  <patternset id="ignored.files">
+    <exclude name="**/CVS/**"/>
+    <exclude name="**/SCCS/**"/>
+    <exclude name="**/RCS/**"/>
+    <exclude name="**/rcs/**"/>
+    <exclude name="**/.DS_Store/**"/>
+    <exclude name="**/.svn/**"/>
+    <exclude name="**/.pyc/**"/>
+    <exclude name="**/.pyo/**"/>
+    <exclude name="**/*.pyc/**"/>
+    <exclude name="**/*.pyo/**"/>
+    <exclude name="**/.git/**"/>
+    <exclude name="**/*.hprof/**"/>
+    <exclude name="**/_svn/**"/>
+    <exclude name="**/.hg/**"/>
+    <exclude name="**/*.lib/**"/>
+    <exclude name="**/*~/**"/>
+    <exclude name="**/__pycache__/**"/>
+    <exclude name="**/.bundle/**"/>
+    <exclude name="**/*.rbc/**"/>
+    <exclude name="**/vssver.scc/**"/>
+    <exclude name="**/vssver2.scc/**"/>
+  </patternset>
+  <patternset id="library.patterns">
+    <include name="*.war"/>
+    <include name="*.ear"/>
+    <include name="*.apk"/>
+    <include name="*.zip"/>
+    <include name="*.swc"/>
+    <include name="*.ane"/>
+    <include name="*.egg"/>
+    <include name="*.jar"/>
+  </patternset>
+  <patternset id="compiler.resources">
+    <exclude name="**/?*.java"/>
+    <exclude name="**/?*.form"/>
+    <exclude name="**/?*.class"/>
+    <exclude name="**/?*.groovy"/>
+    <exclude name="**/?*.scala"/>
+    <exclude name="**/?*.flex"/>
+    <exclude name="**/?*.kt"/>
+    <exclude name="**/?*.clj"/>
+  </patternset>
+  
+  <!-- JDK definitions -->
+  
+  <property name="jdk.bin.1.7" value="${jdk.home.1.7}/bin"/>
+  <path id="jdk.classpath.1.7">
+    <fileset dir="${jdk.home.1.7}">
+      <include name="lib/ant-javafx.jar"/>
+      <include name="lib/dt.jar"/>
+      <include name="lib/javafx-doclet.jar"/>
+      <include name="lib/javafx-mx.jar"/>
+      <include name="lib/jconsole.jar"/>
+      <include name="lib/sa-jdi.jar"/>
+      <include name="lib/tools.jar"/>
+      <include name="jre/lib/charsets.jar"/>
+      <include name="jre/lib/deploy.jar"/>
+      <include name="jre/lib/htmlconverter.jar"/>
+      <include name="jre/lib/javaws.jar"/>
+      <include name="jre/lib/jce.jar"/>
+      <include name="jre/lib/jfr.jar"/>
+      <include name="jre/lib/jfxrt.jar"/>
+      <include name="jre/lib/jsse.jar"/>
+      <include name="jre/lib/management-agent.jar"/>
+      <include name="jre/lib/plugin.jar"/>
+      <include name="jre/lib/resources.jar"/>
+      <include name="jre/lib/rt.jar"/>
+      <include name="jre/lib/ext/dnsns.jar"/>
+      <include name="jre/lib/ext/localedata.jar"/>
+      <include name="jre/lib/ext/sunec.jar"/>
+      <include name="jre/lib/ext/sunjce_provider.jar"/>
+      <include name="jre/lib/ext/sunpkcs11.jar"/>
+      <include name="jre/lib/ext/zipfs.jar"/>
+    </fileset>
+  </path>
+  
+  <property name="project.jdk.home" value="${jdk.home.1.7}"/>
+  <property name="project.jdk.bin" value="${jdk.bin.1.7}"/>
+  <property name="project.jdk.classpath" value="jdk.classpath.1.7"/>
+  
+  
+  <!-- Project Libraries -->
+  
+  <path id="library.openfaces-3.0.classpath">
+    <pathelement location="${basedir}/lib/commons-codec-1.3-license.txt"/>
+    <pathelement location="${basedir}/lib/cssparser-0.9.4-license.txt"/>
+    <pathelement location="${basedir}/lib/dojo-license.txt"/>
+    <pathelement location="${basedir}/lib/jdom-1.0-license.txt"/>
+    <pathelement location="${basedir}/lib/jfreechart-license.txt"/>
+    <pathelement location="${basedir}/lib/json-license.txt"/>
+    <pathelement location="${basedir}/lib/myfaces-license.txt"/>
+    <pathelement location="${basedir}/lib/openfaces-license.txt"/>
+    <pathelement location="${basedir}/lib/redistribution.txt"/>
+    <pathelement location="${basedir}/lib/commons-collections.jar"/>
+    <pathelement location="${basedir}/lib/cssparser.jar"/>
+    <pathelement location="${basedir}/lib/jcommon.jar"/>
+    <pathelement location="${basedir}/lib/jfreechart.jar"/>
+    <pathelement location="${basedir}/lib/openfaces.jar"/>
+    <pathelement location="${basedir}/lib/sac.jar"/>
+  </path>
+  
+  <path id="library.primefaces-5.0.classpath">
+    <pathelement location="${basedir}/lib/primefaces-5.0.jar"/>
+  </path>
+  
+  
+  <!-- Application Server Libraries -->
+  
+  <path id="library.glassfish_4.0.0.classpath">
+    <pathelement location="/usr/bin/glassfish4/glassfish/modules/javax.ejb-api.jar"/>
+    <pathelement location="/usr/bin/glassfish4/glassfish/modules/javax.servlet-api.jar"/>
+    <pathelement location="/usr/bin/glassfish4/glassfish/modules/javax.servlet.jsp-api.jar"/>
+  </path>
+  
+  <path id="library.glassfish_4.0.0_-_jsf.classpath">
+    <pathelement location="/usr/bin/glassfish4/glassfish/modules/javax.faces.jar"/>
+  </path>
+  <!-- Register Custom Compiler Taskdefs -->
+  <property name="javac2.home" value="${idea.home}/lib"/>
+  <path id="javac2.classpath">
+    <pathelement location="${javac2.home}/javac2.jar"/>
+    <pathelement location="${javac2.home}/jdom.jar"/>
+    <pathelement location="${javac2.home}/asm4-all.jar"/>
+    <pathelement location="${javac2.home}/jgoodies-forms.jar"/>
+  </path>
+  <target name="register.custom.compilers">
+    <taskdef name="javac2" classname="com.intellij.ant.Javac2" classpathref="javac2.classpath"/>
+    <taskdef name="instrumentIdeaExtensions" classname="com.intellij.ant.InstrumentIdeaExtensions" classpathref="javac2.classpath"/>
+  </target>
+  
+  <!-- Modules -->
+  
+  
+  <!-- Module medHPO -->
+  
+  <dirname property="module.medhpo.basedir" file="${ant.file}"/>
+  
+  
+  <property name="module.jdk.home.medhpo" value="${project.jdk.home}"/>
+  <property name="module.jdk.bin.medhpo" value="${project.jdk.bin}"/>
+  <property name="module.jdk.classpath.medhpo" value="${project.jdk.classpath}"/>
+  
+  <property name="compiler.args.medhpo" value="-encoding UTF-8 -source 1.7 ${compiler.args}"/>
+  
+  <property name="medhpo.output.dir" value="${module.medhpo.basedir}/out/production/medHPO"/>
+  <property name="medhpo.testoutput.dir" value="${module.medhpo.basedir}/out/test/medHPO"/>
+  
+  <path id="medhpo.module.bootclasspath">
+    <!-- Paths to be included in compilation bootclasspath -->
+  </path>
+  
+  <path id="medhpo.module.production.classpath">
+    <path refid="${module.jdk.classpath.medhpo}"/>
+    <path refid="library.glassfish_4.0.0.classpath"/>
+    <path refid="library.glassfish_4.0.0_-_jsf.classpath"/>
+    <path refid="library.openfaces-3.0.classpath"/>
+    <pathelement location="${basedir}/lib/opennlp-maxent-3.0.3.jar"/>
+    <pathelement location="${basedir}/lib/opennlp-tools-1.5.3.jar"/>
+    <pathelement location="${basedir}/lib/opennlp-uima-1.5.3.jar"/>
+    <pathelement location="${basedir}/lib/jwnl-1.3.3.jar"/>
+    <path refid="library.primefaces-5.0.classpath"/>
+    <pathelement location="${idea.home}/lib/junit-4.11.jar"/>
+  </path>
+  
+  <path id="medhpo.runtime.production.module.classpath">
+    <pathelement location="${medhpo.output.dir}"/>
+    <path refid="library.openfaces-3.0.classpath"/>
+    <pathelement location="${basedir}/lib/opennlp-maxent-3.0.3.jar"/>
+    <pathelement location="${basedir}/lib/opennlp-tools-1.5.3.jar"/>
+    <pathelement location="${basedir}/lib/opennlp-uima-1.5.3.jar"/>
+    <pathelement location="${basedir}/lib/jwnl-1.3.3.jar"/>
+    <path refid="library.primefaces-5.0.classpath"/>
+    <pathelement location="${idea.home}/lib/junit-4.11.jar"/>
+  </path>
+  
+  <path id="medhpo.module.classpath">
+    <path refid="${module.jdk.classpath.medhpo}"/>
+    <pathelement location="${medhpo.output.dir}"/>
+    <path refid="library.glassfish_4.0.0.classpath"/>
+    <path refid="library.glassfish_4.0.0_-_jsf.classpath"/>
+    <path refid="library.openfaces-3.0.classpath"/>
+    <pathelement location="${basedir}/lib/opennlp-maxent-3.0.3.jar"/>
+    <pathelement location="${basedir}/lib/opennlp-tools-1.5.3.jar"/>
+    <pathelement location="${basedir}/lib/opennlp-uima-1.5.3.jar"/>
+    <pathelement location="${basedir}/lib/jwnl-1.3.3.jar"/>
+    <path refid="library.primefaces-5.0.classpath"/>
+    <pathelement location="${idea.home}/lib/junit-4.11.jar"/>
+  </path>
+  
+  <path id="medhpo.runtime.module.classpath">
+    <pathelement location="${medhpo.testoutput.dir}"/>
+    <pathelement location="${medhpo.output.dir}"/>
+    <path refid="library.glassfish_4.0.0.classpath"/>
+    <path refid="library.glassfish_4.0.0_-_jsf.classpath"/>
+    <path refid="library.openfaces-3.0.classpath"/>
+    <pathelement location="${basedir}/lib/opennlp-maxent-3.0.3.jar"/>
+    <pathelement location="${basedir}/lib/opennlp-tools-1.5.3.jar"/>
+    <pathelement location="${basedir}/lib/opennlp-uima-1.5.3.jar"/>
+    <pathelement location="${basedir}/lib/jwnl-1.3.3.jar"/>
+    <path refid="library.primefaces-5.0.classpath"/>
+    <pathelement location="${idea.home}/lib/junit-4.11.jar"/>
+  </path>
+  
+  
+  <patternset id="excluded.from.module.medhpo">
+    <patternset refid="ignored.files"/>
+  </patternset>
+  
+  <patternset id="excluded.from.compilation.medhpo">
+    <patternset refid="excluded.from.module.medhpo"/>
+  </patternset>
+  
+  <path id="medhpo.module.sourcepath">
+    <dirset dir="${module.medhpo.basedir}">
+      <include name="src"/>
+    </dirset>
+  </path>
+  
+  
+  <target name="compile.module.medhpo" depends="compile.module.medhpo.production,compile.module.medhpo.tests" description="Compile module medHPO"/>
+  
+  <target name="compile.module.medhpo.production" depends="register.custom.compilers" description="Compile module medHPO; production classes">
+    <mkdir dir="${medhpo.output.dir}"/>
+    <javac2 destdir="${medhpo.output.dir}" debug="${compiler.debug}" nowarn="${compiler.generate.no.warnings}" memorymaximumsize="${compiler.max.memory}" fork="true" executable="${module.jdk.bin.medhpo}/javac">
+      <compilerarg line="${compiler.args.medhpo}"/>
+      <bootclasspath refid="medhpo.module.bootclasspath"/>
+      <classpath refid="medhpo.module.production.classpath"/>
+      <src refid="medhpo.module.sourcepath"/>
+      <patternset refid="excluded.from.compilation.medhpo"/>
+    </javac2>
+    
+    <copy todir="${medhpo.output.dir}">
+      <fileset dir="${module.medhpo.basedir}/src">
+        <patternset refid="compiler.resources"/>
+        <type type="file"/>
+      </fileset>
+    </copy>
+  </target>
+  
+  <target name="compile.module.medhpo.tests" depends="register.custom.compilers,compile.module.medhpo.production" description="compile module medHPO; test classes" unless="skip.tests"/>
+  
+  <target name="clean.module.medhpo" description="cleanup module">
+    <delete dir="${medhpo.output.dir}"/>
+    <delete dir="${medhpo.testoutput.dir}"/>
+  </target>
+  
+  <target name="init" description="Build initialization">
+    <!-- Perform any build initialization in this target -->
+  </target>
+  
+  <target name="clean" depends="clean.module.medhpo, clean.artifact.medhpo:war_exploded" description="cleanup all"/>
+  
+  <target name="build.modules" depends="init, clean, compile.module.medhpo" description="build all modules"/>
+  
+  <target name="init.artifacts">
+    <property name="artifacts.temp.dir" value="${basedir}/__artifacts_temp"/>
+    <property name="artifact.output.medhpo:war_exploded" value="${basedir}/out/artifacts/medHPO_war_exploded"/>
+    <mkdir dir="${artifacts.temp.dir}"/>
+  </target>
+  
+  <target name="clean.artifact.medhpo:war_exploded" description="clean medHPO:war exploded artifact output">
+    <delete dir="${artifact.output.medhpo:war_exploded}"/>
+  </target>
+  
+  <target name="artifact.medhpo:war_exploded" depends="init.artifacts, compile.module.medhpo" description="Build &#39;medHPO:war exploded&#39; artifact">
+    <mkdir dir="${artifact.output.medhpo:war_exploded}"/>
+    <copy todir="${artifact.output.medhpo:war_exploded}">
+      <fileset dir="${basedir}/web"/>
+    </copy>
+    <mkdir dir="${artifact.output.medhpo:war_exploded}/WEB-INF"/>
+    <copy file="${basedir}/web/WEB-INF/web.xml" tofile="${artifact.output.medhpo:war_exploded}/WEB-INF/web.xml"/>
+    <mkdir dir="${artifact.output.medhpo:war_exploded}/WEB-INF"/>
+    <mkdir dir="${artifact.output.medhpo:war_exploded}/WEB-INF/classes"/>
+    <copy todir="${artifact.output.medhpo:war_exploded}/WEB-INF/classes">
+      <fileset dir="${medhpo.output.dir}"/>
+    </copy>
+    <mkdir dir="${artifact.output.medhpo:war_exploded}/WEB-INF/lib"/>
+    <copy file="${basedir}/lib/sac.jar" tofile="${artifact.output.medhpo:war_exploded}/WEB-INF/lib/sac.jar"/>
+    <copy file="${basedir}/lib/openfaces.jar" tofile="${artifact.output.medhpo:war_exploded}/WEB-INF/lib/openfaces.jar"/>
+    <copy file="${basedir}/lib/jcommon.jar" tofile="${artifact.output.medhpo:war_exploded}/WEB-INF/lib/jcommon.jar"/>
+    <copy file="${basedir}/lib/cssparser.jar" tofile="${artifact.output.medhpo:war_exploded}/WEB-INF/lib/cssparser.jar"/>
+    <copy file="${basedir}/lib/commons-collections.jar" tofile="${artifact.output.medhpo:war_exploded}/WEB-INF/lib/commons-collections.jar"/>
+    <copy file="${basedir}/lib/openfaces-license.txt" tofile="${artifact.output.medhpo:war_exploded}/WEB-INF/lib/openfaces-license.txt"/>
+    <copy file="${basedir}/lib/redistribution.txt" tofile="${artifact.output.medhpo:war_exploded}/WEB-INF/lib/redistribution.txt"/>
+    <copy file="${basedir}/lib/commons-codec-1.3-license.txt" tofile="${artifact.output.medhpo:war_exploded}/WEB-INF/lib/commons-codec-1.3-license.txt"/>
+    <copy file="${basedir}/lib/jfreechart.jar" tofile="${artifact.output.medhpo:war_exploded}/WEB-INF/lib/jfreechart.jar"/>
+    <copy file="${basedir}/lib/cssparser-0.9.4-license.txt" tofile="${artifact.output.medhpo:war_exploded}/WEB-INF/lib/cssparser-0.9.4-license.txt"/>
+    <copy file="${basedir}/lib/dojo-license.txt" tofile="${artifact.output.medhpo:war_exploded}/WEB-INF/lib/dojo-license.txt"/>
+    <copy file="${basedir}/lib/jdom-1.0-license.txt" tofile="${artifact.output.medhpo:war_exploded}/WEB-INF/lib/jdom-1.0-license.txt"/>
+    <copy file="${basedir}/lib/jfreechart-license.txt" tofile="${artifact.output.medhpo:war_exploded}/WEB-INF/lib/jfreechart-license.txt"/>
+    <copy file="${basedir}/lib/json-license.txt" tofile="${artifact.output.medhpo:war_exploded}/WEB-INF/lib/json-license.txt"/>
+    <copy file="${basedir}/lib/myfaces-license.txt" tofile="${artifact.output.medhpo:war_exploded}/WEB-INF/lib/myfaces-license.txt"/>
+    <copy file="${basedir}/lib/opennlp-maxent-3.0.3.jar" tofile="${artifact.output.medhpo:war_exploded}/WEB-INF/lib/opennlp-maxent-3.0.3.jar"/>
+    <copy file="${basedir}/lib/opennlp-tools-1.5.3.jar" tofile="${artifact.output.medhpo:war_exploded}/WEB-INF/lib/opennlp-tools-1.5.3.jar"/>
+    <copy file="${basedir}/lib/opennlp-uima-1.5.3.jar" tofile="${artifact.output.medhpo:war_exploded}/WEB-INF/lib/opennlp-uima-1.5.3.jar"/>
+    <copy file="${basedir}/lib/jwnl-1.3.3.jar" tofile="${artifact.output.medhpo:war_exploded}/WEB-INF/lib/jwnl-1.3.3.jar"/>
+    <copy file="${basedir}/lib/primefaces-5.0.jar" tofile="${artifact.output.medhpo:war_exploded}/WEB-INF/lib/primefaces-5.0.jar"/>
+  </target>
+  
+  <target name="build.all.artifacts" depends="artifact.medhpo:war_exploded" description="Build all artifacts">
+
+
+    <!-- Delete temporary files -->
+    <delete dir="${artifacts.temp.dir}"/>
+  </target>
+
+    <target name="test" depends="build.all.artifacts">
+    </target>
+
+    <target name="all" depends="build.modules, build.all.artifacts" description="build all"/>
+</project>
