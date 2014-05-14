@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+        "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:f="http://java.sun.com/jsf/core"
+      xmlns:h="http://java.sun.com/jsf/html"
+      xmlns:ui="http://xmlns.jcp.org/jsf/facelets"
+      xmlns:p="http://primefaces.org/ui">
+<h:head>
+    <title>MedHPO</title>
+</h:head>
+<h:body>
+
+    <h:form>
+        <p:menubar autoDisplay="false">
+            <p:menuitem value="Home" url="/index.xhtml" icon="ui-icon-home"/>
+            <p:menuitem value="Select Visit" url="/visitList.xhtml" icon="ui-icon-contact"/>
+            <p:menuitem value="Process All Visits" action="processAllVisits"/>
+        </p:menubar>
+
+        Patient visit:<br/>
+        <h:selectOneListbox value="#{HPOController.selectedVisit}" style="width: 150px; height:120px;">
+            <f:selectItems value="#{HPOController.visits}" var="v" itemValue="#{v.id}" itemLabel="#{v.patientID}&nbsp;-&nbsp;#{v.date}" />
+        </h:selectOneListbox>
+        <br/><br/>
+        Additional Text:<br/>
+        <p:inputTextarea rows="3" cols="45" completeMethod="#{HPOController.autocompleteHPO}" queryDelay="50" minQueryLength="2" value="#{ HPOController.textToProcess }"/>
+        <br/>
+        <h:commandButton value="Submit" action="processText"/>
+    </h:form>
+</h:body>
+</html>
