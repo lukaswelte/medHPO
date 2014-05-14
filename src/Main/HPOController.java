@@ -314,7 +314,7 @@ public class HPOController implements Serializable {
             //get customer data from database
             resultSet = ps.executeQuery();
 
-            List<Term> list = new ArrayList<Term>();
+            List<Term> list = new ArrayList<>();
 
             while (resultSet.next()) {
                 Term term = new Term();
@@ -369,7 +369,7 @@ public class HPOController implements Serializable {
         //get customer data from database
         ResultSet result =  ps.executeQuery();
 
-        List<Term> list = new ArrayList<Term>();
+        List<Term> list = new ArrayList<>();
 
         while(result.next()){
             Term term = new Term();
