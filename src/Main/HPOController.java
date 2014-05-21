@@ -6,12 +6,10 @@ import Main.model.Visit;
 import opennlp.tools.postag.POSModel;
 import opennlp.tools.postag.POSTaggerME;
 
+import javax.annotation.PostConstruct;
 import javax.annotation.Resource;
 import javax.faces.bean.ManagedBean;
 import javax.faces.bean.SessionScoped;
-import javax.naming.Context;
-import javax.naming.InitialContext;
-import javax.naming.NamingException;
 import javax.sql.DataSource;
 import java.io.IOException;
 import java.io.Serializable;
@@ -28,11 +26,40 @@ import java.util.Map;
 @SessionScoped
 public class HPOController implements Serializable {
 
-    @Resource(name="jdbc/hpo")
+    public static String anonymizedString;
+    /**
+     * Statistics  *
+     */
+    public static int sentence_detection_and_tokenization_in_ms;
+    public static int name_finding_in_ms;
+    public static int chunking_in_ms;
+    public static List<Visit> visits;
+    public static int selectedVisit;
+    public static String outputText;
+    public static String debugMessage;
+    public static String hpoMatches;
+    public static String hpoMultipleMatches;
+    public static int numberFoundNames;
+    public static String processAllVisits;
+    @Resource(lookup = "jdbc/hpo")
     private DataSource dataSource;
-
-    @Resource(name="jdbc/klinik")
+    @Resource(lookup = "jdbc/klinik")
     private DataSource klinikDataSource;
+    private String textToProcess = "Jerome had large hands. Suffering from psychotic episodes the patient is just in sickbed. A Prolactin excess made it really hard.";
+    private POSModel model;
+
+    public static String getJSONStringFromList(List<Term> list) {
+        StringBuilder stringBuilder = new StringBuilder("[");
+
+        for (Term t : list) {
+            stringBuilder.append(t.jsonDescription());
+            stringBuilder.append(",");
+        }
+        stringBuilder.deleteCharAt(stringBuilder.length() - 1);
+        stringBuilder.append("]");
+
+        return stringBuilder.toString();
+    }
 
     public String getTextToProcess() {
         return textToProcess;
@@ -42,53 +69,50 @@ public class HPOController implements Serializable {
         this.textToProcess = textToProcess;
     }
 
-    private String textToProcess = "Jerome had large hands. Suffering from psychotic episodes the patient is just in sickbed. A Prolactin excess made it really hard.";
-
-    private POSModel model;
-
     /**
      * Retrieve patients and visits while creating the controller
      */
-    public HPOController() {
+    @PostConstruct
+    public void init() {
         Connection klinikConnection;
         visits = null;
         try {
-            klinikConnection = getJDBCConnection("java:comp/env/jdbc/klinik");
+            klinikConnection = klinikDataSource.getConnection();
             PreparedStatement ps = klinikConnection.prepareStatement("SELECT id,  patient_id, date FROM visit");
-            ResultSet resultSet =  ps.executeQuery();
+            ResultSet resultSet = ps.executeQuery();
 
-            visits = new ArrayList<Visit>();
+            visits = new ArrayList<>();
 
-            while(resultSet.next()){
+            while (resultSet.next()) {
                 visits.add(new Visit(resultSet.getInt(1), resultSet.getInt(2), resultSet.getString(3), "", ""));
             }
-        }  catch (SQLException e){
+        } catch (SQLException e) {
             e.printStackTrace();
         }
-    } // end constructor HPOController
+    }
 
-    public List<String> run( String sentence ) {
-        POSTaggerME tagger = new POSTaggerME( getModel() );
-        String[] words = sentence.split( "\\s+" );
-        String[] tags = tagger.tag( words );
+    public List<String> run(String sentence) {
+        POSTaggerME tagger = new POSTaggerME(getModel());
+        String[] words = sentence.split("\\s+");
+        String[] tags = tagger.tag(words);
         double[] probs = tagger.probs();
 
         List<String> result = new ArrayList<>();
-        for( int i = 0; i < tags.length; i++ ) {
+        for (int i = 0; i < tags.length; i++) {
             if (tags[i].equals("NN"))
                 result.add(words[i]);
-            System.out.println( words[i] + " => " + tags[i] + " @ " + probs[i] );
+            System.out.println(words[i] + " => " + tags[i] + " @ " + probs[i]);
         }
 
         return result;
     }
 
-    private void setModel( POSModel model ) {
-        this.model = model;
-    }
-
     private POSModel getModel() {
         return this.model;
+    }
+
+    private void setModel(POSModel model) {
+        this.model = model;
     }
 
     public String posTextToProcess() {
@@ -100,20 +124,12 @@ public class HPOController implements Serializable {
         return posText(textToProcess);
     }
 
-
     public String posText(String string) {
         //Start Time Measurement
         long start = System.nanoTime();
         long last = start;
 
         HPOController hpoController = new HPOController();
-
-        /*
-        POSModel model;
-        model = new POSModelLoader().load(new File("en-pos-maxent.bin"));
-        hpoController.setModel(model);
-        List<String> words = hpoController.run(string);
-        */
 
         List<TermSearchCandidate> termSearchCandidates = null;
         try {
@@ -122,41 +138,32 @@ public class HPOController implements Serializable {
             e.printStackTrace();
         }
 
+        assert termSearchCandidates != null;
         System.out.println("\n\n\n128: termSearchCandidates.size = " + termSearchCandidates.size()
-            + ",  termSearchCandidates: " + termSearchCandidates + "\n\n");
+                + ",  termSearchCandidates: " + termSearchCandidates + "\n\n");
 
         // Print Measurement
         double elapsedTimeInSec = (System.nanoTime() - last) * 1.0e-9;
-        System.out.println("Text Processing Time: "+elapsedTimeInSec);
+        System.out.println("Text Processing Time: " + elapsedTimeInSec);
         last = System.nanoTime();
 
-        HashMap<TermSearchCandidate,List<Term>> foundTerms = new HashMap<TermSearchCandidate, List<Term>>();
+        HashMap<TermSearchCandidate, List<Term>> foundTerms = new HashMap<TermSearchCandidate, List<Term>>();
 
 
         List<Term> terms;
-        List<Term> hpoMatchList = new ArrayList<Term>(5);
-        List<List<Term>> hpoMultipleMatchList = new ArrayList<List<Term>>(5);
-        if (termSearchCandidates == null) return "Finished";
+        List<Term> hpoMatchList = new ArrayList<>(5);
+        List<List<Term>> hpoMultipleMatchList = new ArrayList<>(5);
 
         //Open Database Connection
         Connection con = null;
-        try
-        {
-            Context ctx = new InitialContext();
-            dataSource = (DataSource) ctx.lookup("java:comp/env/jdbc/hpo");
-
-            if(dataSource==null)
-                throw new SQLException("Can't get data source");
-
+        try {
             //get database connection
             con = dataSource.getConnection();
 
-            if(con==null)
+            if (con == null)
                 throw new SQLException("Can't get database connection");
 
-        }
-        catch (Exception e)
-        {
+        } catch (Exception e) {
             e.printStackTrace();
         }
 
@@ -166,21 +173,21 @@ public class HPOController implements Serializable {
 
         // Print Measurement
         elapsedTimeInSec = (System.nanoTime() - last) * 1.0e-9;
-        System.out.println("Opening Database: "+elapsedTimeInSec);
+        System.out.println("Opening Database: " + elapsedTimeInSec);
         last = System.nanoTime();
 
         for (TermSearchCandidate candidate : termSearchCandidates) {
             try {
-                terms  =  hpoController.getTermsForCandidate(candidate,con);
-                if (terms != null && terms.size()>0) {
+                terms = hpoController.getTermsForCandidate(candidate, con);
+                if (terms != null && terms.size() > 0) {
                     //System.out.println("\n\n177: candidate: " + candidate + " -------\nterms.size: " + terms.size() + ", terms: " + terms + " ------\n\n");
-                    if (terms.size()==1) {
+                    if (terms.size() == 1) {
                         hpoMatchList.add(terms.get(0));
                     } else {
                         hpoMultipleMatchList.add(terms);
                     }
 
-                    foundTerms.put(candidate,terms);
+                    foundTerms.put(candidate, terms);
                 }
             } catch (SQLException e) {
                 e.printStackTrace();
@@ -189,7 +196,7 @@ public class HPOController implements Serializable {
 
         // Print Measurement
         elapsedTimeInSec = (System.nanoTime() - last) * 1.0e-9;
-        System.out.println("Search Database: "+elapsedTimeInSec);
+        System.out.println("Search Database: " + elapsedTimeInSec);
         last = System.nanoTime();
 
         //Close Database Connection
@@ -201,24 +208,24 @@ public class HPOController implements Serializable {
 
         // Print Measurement
         elapsedTimeInSec = (System.nanoTime() - last) * 1.0e-9;
-        System.out.println("Close Database: "+elapsedTimeInSec);
+        System.out.println("Close Database: " + elapsedTimeInSec);
         last = System.nanoTime();
 
-        if (foundTerms != null && foundTerms.size()>0) {
-           System.out.println("\n Found Terms:");
-            for (Map.Entry<TermSearchCandidate,List<Term>> entry : foundTerms.entrySet()) {
-                System.out.println(entry.getKey()+":\t \t "+entry.getValue().toString()+"\n");
+        if (foundTerms.size() > 0) {
+            System.out.println("\n Found Terms:");
+            for (Map.Entry<TermSearchCandidate, List<Term>> entry : foundTerms.entrySet()) {
+                System.out.println(entry.getKey() + ":\t \t " + entry.getValue().toString() + "\n");
             }
 
 
             // Print Measurement
             elapsedTimeInSec = (System.nanoTime() - last) * 1.0e-9;
-            System.out.println("Print results: "+elapsedTimeInSec);
+            System.out.println("Print results: " + elapsedTimeInSec);
             last = System.nanoTime();
 
             // Print Measurement
             elapsedTimeInSec = (System.nanoTime() - start) * 1.0e-9;
-            System.out.println("Overall Time: "+elapsedTimeInSec);
+            System.out.println("Overall Time: " + elapsedTimeInSec);
 
             debugMessage = foundTerms.toString();
 
@@ -227,7 +234,7 @@ public class HPOController implements Serializable {
             }
 
             hpoMatches = "";
-            if((hpoMatchList != null)&&(hpoMatchList.size() > 0)) {
+            if ((hpoMatchList.size() > 0)) {
                 HPOController.outputText = formatOutput(string, hpoMatchList);
 
                 //Create String from Match Lists
@@ -235,10 +242,10 @@ public class HPOController implements Serializable {
 
                 StringBuilder stringBuilder = new StringBuilder("[");
                 for (List<Term> termList : hpoMultipleMatchList) {
-                     stringBuilder.append(HPOController.getJSONStringFromList(termList));
+                    stringBuilder.append(HPOController.getJSONStringFromList(termList));
                     stringBuilder.append(",");
                 }
-                stringBuilder.deleteCharAt(stringBuilder.length()-1);
+                stringBuilder.deleteCharAt(stringBuilder.length() - 1);
                 stringBuilder.append("]");
                 hpoMultipleMatches = stringBuilder.toString();
             }
@@ -250,32 +257,17 @@ public class HPOController implements Serializable {
 
         // Print Measurement
         elapsedTimeInSec = (System.nanoTime() - last) * 1.0e-9;
-        System.out.println("Print results: "+elapsedTimeInSec);
+        System.out.println("Print results: " + elapsedTimeInSec);
         last = System.nanoTime();
 
         // Print Measurement
         elapsedTimeInSec = (System.nanoTime() - start) * 1.0e-9;
-        System.out.println("Overall Time: "+elapsedTimeInSec);
+        System.out.println("Overall Time: " + elapsedTimeInSec);
         // TODO xxx
         return "processResult";//return "Finished";
     }
 
-
-    public static String getJSONStringFromList(List<Term> list) {
-        StringBuilder stringBuilder = new StringBuilder("[");
-
-        for (Term t : list) {
-            stringBuilder.append(t.jsonDescription());
-            stringBuilder.append(",");
-        }
-        stringBuilder.deleteCharAt(stringBuilder.length()-1);
-        stringBuilder.append("]");
-
-        return stringBuilder.toString();
-    }
-
-    public List<Term> getTermsForCandidate(TermSearchCandidate candidate,Connection con) throws SQLException {
-
+    public List<Term> getTermsForCandidate(TermSearchCandidate candidate, Connection con) throws SQLException {
 
 
         List<Term> result = null;
@@ -298,7 +290,7 @@ public class HPOController implements Serializable {
             ResultSet resultSet = ps.executeQuery();
             if (resultSet.next()) {
                 int numberOfRows = resultSet.getInt(1);
-                if (numberOfRows>10) continue;
+                if (numberOfRows > 10) continue;
             } else {
                 System.out.println("Error fetching count");
             }
@@ -328,9 +320,9 @@ public class HPOController implements Serializable {
             }
 
             //Too much results
-            if (list.size()>10) continue;
+            if (list.size() > 10) continue;
 
-            if (result == null || (result.size() > list.size() && list.size()>0)) {
+            if (result == null || (result.size() > list.size() && list.size() > 0)) {
                 result = list;
             }
         }
@@ -338,40 +330,27 @@ public class HPOController implements Serializable {
     }
 
     public List<Term> getTermWithName(String name) throws SQLException {
-        if (dataSource == null) {
-            try
-            {
-                Context ctx = new InitialContext();
-                dataSource = (DataSource) ctx.lookup("java:comp/env/jdbc/hpo");
-            }
-            catch (NamingException e)
-            {
-                e.printStackTrace();
-            }
-        }
-
-
-        if(dataSource==null)
+        if (dataSource == null)
             throw new SQLException("Can't get data source");
 
         //get database connection
         Connection con = dataSource.getConnection();
 
-        if(con==null)
+        if (con == null)
             throw new SQLException("Can't get database connection");
 
         PreparedStatement ps
                 = con.prepareStatement(
                 "SELECT DISTINCT term.acc, term.name FROM term LEFT JOIN term_synonym ON term.id = term_synonym.term_id WHERE term.name LIKE ? OR term_synonym.term_synonym LIKE ?");
-        ps.setString(1,"%"+name+"%");
-        ps.setString(2,"%"+name+"%");
+        ps.setString(1, "%" + name + "%");
+        ps.setString(2, "%" + name + "%");
 
         //get customer data from database
-        ResultSet result =  ps.executeQuery();
+        ResultSet result = ps.executeQuery();
 
         List<Term> list = new ArrayList<>();
 
-        while(result.next()){
+        while (result.next()) {
             Term term = new Term();
 
             term.setName(result.getString("name"));
@@ -384,39 +363,26 @@ public class HPOController implements Serializable {
         return list;
     }
 
-
     public List<Term> getTermStartingWithText(String query) throws SQLException {
-        if (dataSource == null) {
-            try
-            {
-                Context ctx = new InitialContext();
-                dataSource = (DataSource) ctx.lookup("java:comp/env/jdbc/hpo");
-            }
-            catch (NamingException e)
-            {
-                e.printStackTrace();
-            }
-        }
-
-        if(dataSource==null)
+        if (dataSource == null)
             throw new SQLException("Can't get data source");
 
         //get database connection
         Connection con = dataSource.getConnection();
 
-        if(con==null)
+        if (con == null)
             throw new SQLException("Can't get database connection");
 
         PreparedStatement ps = con.prepareStatement(
                 "SELECT DISTINCT acc, name FROM term WHERE term.name LIKE ?");
-        ps.setString(1,query+"%");
+        ps.setString(1, query + "%");
 
         //get customer data from database
-        ResultSet result =  ps.executeQuery();
+        ResultSet result = ps.executeQuery();
 
-        List<Term> list = new ArrayList<Term>();
+        List<Term> list = new ArrayList<>();
 
-        while(result.next()){
+        while (result.next()) {
             Term term = new Term();
 
             term.setName(result.getString("name"));
@@ -428,12 +394,12 @@ public class HPOController implements Serializable {
 
         ps = con.prepareStatement(
                 "SELECT DISTINCT term_synonym, acc FROM term_synonym JOIN term ON term_synonym.term_id = term.id WHERE term_synonym LIKE ?");
-        ps.setString(1,query+"%");
+        ps.setString(1, query + "%");
 
         //get customer data from database
-        result =  ps.executeQuery();
+        result = ps.executeQuery();
 
-        while(result.next()){
+        while (result.next()) {
             Term term = new Term();
 
             term.setName(result.getString("term_synonym"));
@@ -444,7 +410,7 @@ public class HPOController implements Serializable {
         }
 
         //Too much data
-        if (list.size()>20) list.clear();
+        if (list.size() > 20) list.clear();
 
         return list;
     }
@@ -455,7 +421,7 @@ public class HPOController implements Serializable {
         HPOController hpoController = new HPOController();
         List<Term> terms = null;
         try {
-           terms  = hpoController.getTermStartingWithText(query);
+            terms = hpoController.getTermStartingWithText(query);
         } catch (SQLException e) {
             e.printStackTrace();
         }
@@ -469,42 +435,31 @@ public class HPOController implements Serializable {
         return results;
     }
 
-
-    public static String anonymizedString;
-
-    /** Statistics  **/
-    public static int sentence_detection_and_tokenization_in_ms;
-    public static int name_finding_in_ms;
-    public static int chunking_in_ms;
-    public static List<Visit> visits;
-    public static int selectedVisit;
-    public static String outputText;
-    public static String debugMessage;
-    public static String hpoMatches;
-    public static String hpoMultipleMatches;
-    public static int numberFoundNames;
-
     // Getters and Setters
     public List<Visit> getVisits() {
         return visits;
     }
+
     public int getSelectedVisit() {
         return selectedVisit;
     }
+
     public void setSelectedVisit(int visitId) {
         selectedVisit = visitId;
     }
+
     public String getOutputText() {
         this.posTextToProcess();
         return HPOController.outputText;
     }
+
     public String getDebugMessage() {
         return HPOController.debugMessage;
     }
 
     private Boolean saveToDatabase() throws SQLException {
 
-        Connection con = getJDBCConnection("java:comp/env/jdbc/klinik");
+        Connection con = klinikDataSource.getConnection();
 
         /* Done: Save Anonymized Text back into Visits */
         /* TODO: Save Statistics and found data in HPO-Infos Table and reference it to the visit. Save absolut matches (one term in the match) in the hpo_matches field and matches with multiple terms in the hpo_multiple_matches */
@@ -513,43 +468,13 @@ public class HPOController implements Serializable {
     }
 
     /**
-     * Gets connection to the Klinik data source
-      * @return
-     */
-    private Connection getJDBCConnection(String name) throws SQLException {
-        if (klinikDataSource == null) {
-            try
-            {
-                Context ctx = new InitialContext();
-                klinikDataSource = (DataSource) ctx.lookup(name);//"java:comp/env/jdbc/klinik");
-            }
-            catch (NamingException e)
-            {
-                e.printStackTrace();
-            }
-        }
-
-        if(klinikDataSource==null)
-            throw new SQLException("Can't get data source");
-
-        //get database connection
-        Connection con = klinikDataSource.getConnection();
-
-        if(con==null)
-            throw new SQLException("Can't get database connection");
-
-        return con;
-    } // getJDBCConnection
-
-
-    /**
      * Save data to visit and hpoinfo table
      */
     private void saveVisitAndHPOInfo() {
         try {
-            Connection klinikConnection = getJDBCConnection("java:comp/env/jdbc/klinik");
+            Connection klinikConnection = klinikDataSource.getConnection();
             PreparedStatement ps = klinikConnection.prepareStatement("UPDATE visit SET additional_text = '"
-                + anonymizedString + "' WHERE id = " + selectedVisit);
+                    + anonymizedString + "' WHERE id = " + selectedVisit);
             ps.executeUpdate();
 
             if (selectedVisit != 0) {
@@ -573,7 +498,7 @@ public class HPOController implements Serializable {
 
                 String SQL = "INSERT INTO hpoinfo VALUES ("
                         + (highestID + 1) + ", " + selectedVisit + ", '"
-                        + hpoMatchesValueToInsert + "', "+numberFoundNames+", '"+hpoMultipleMatchesValueToInsert+"',"
+                        + hpoMatchesValueToInsert + "', " + numberFoundNames + ", '" + hpoMultipleMatchesValueToInsert + "',"
                         + sentence_detection_and_tokenization_in_ms + ", "
                         + name_finding_in_ms + ", "
                         + chunking_in_ms + ")";
@@ -588,19 +513,8 @@ public class HPOController implements Serializable {
         }
     }
 
-    public static String processAllVisits;
-
     public String getProcessAllVisits() {
-        try {
-            Connection connection = klinikDataSource.getConnection();
-
-
-
-        } catch (SQLException e) {
-            e.printStackTrace();
-            return "Error on Processing all visits";
-        }
-
+        //TODO: Process all visits
         return "Finished Processing all visits";
     }
 
@@ -610,9 +524,9 @@ public class HPOController implements Serializable {
      * 'The patient had large hands. Suffering from psychotic episodes the patient is just in sickbed.'
      * Would be transformed into
      * 'The patient had <em>large hands</em>. Suffering from <em>psychotic episodes</em> the patient is just in sickbed.'
-     * @param originalStr
-     * @param terms
-     * @return
+     * @param originalStr  The input string
+     * @param terms   The term list
+     * @return Formatted String
      */
     private String formatOutput(String originalStr, List<Term> terms) {
         StringBuffer originalString = new StringBuffer(originalStr);
