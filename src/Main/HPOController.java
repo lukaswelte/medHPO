@@ -4,7 +4,6 @@ import Main.model.Term;
 import Main.model.TermSearchCandidate;
 import Main.model.Visit;
 import opennlp.tools.postag.POSModel;
-import opennlp.tools.postag.POSTaggerME;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.Resource;
@@ -47,6 +46,7 @@ public class HPOController implements Serializable {
     private DataSource klinikDataSource;
     private String textToProcess = "Jerome had large hands. Suffering from psychotic episodes the patient is just in sickbed. A Prolactin excess made it really hard.";
     private POSModel model;
+    private List<Term> outputHPOTags;
 
     public static String getJSONStringFromList(List<Term> list) {
         StringBuilder stringBuilder = new StringBuilder("[");
@@ -91,28 +91,8 @@ public class HPOController implements Serializable {
         }
     }
 
-    public List<String> run(String sentence) {
-        POSTaggerME tagger = new POSTaggerME(getModel());
-        String[] words = sentence.split("\\s+");
-        String[] tags = tagger.tag(words);
-        double[] probs = tagger.probs();
-
-        List<String> result = new ArrayList<>();
-        for (int i = 0; i < tags.length; i++) {
-            if (tags[i].equals("NN"))
-                result.add(words[i]);
-            System.out.println(words[i] + " => " + tags[i] + " @ " + probs[i]);
-        }
-
-        return result;
-    }
-
     private POSModel getModel() {
         return this.model;
-    }
-
-    private void setModel(POSModel model) {
-        this.model = model;
     }
 
     public String posTextToProcess() {
@@ -236,6 +216,7 @@ public class HPOController implements Serializable {
             hpoMatches = "";
             if ((hpoMatchList.size() > 0)) {
                 HPOController.outputText = formatOutput(string, hpoMatchList);
+                outputHPOTags = addDescriptionToTerms(hpoMatchList);
 
                 //Create String from Match Lists
                 hpoMatches = HPOController.getJSONStringFromList(hpoMatchList);
@@ -263,7 +244,6 @@ public class HPOController implements Serializable {
         // Print Measurement
         elapsedTimeInSec = (System.nanoTime() - start) * 1.0e-9;
         System.out.println("Overall Time: " + elapsedTimeInSec);
-        // TODO xxx
         return "processResult";//return "Finished";
     }
 
@@ -327,40 +307,6 @@ public class HPOController implements Serializable {
             }
         }
         return result;
-    }
-
-    public List<Term> getTermWithName(String name) throws SQLException {
-        if (dataSource == null)
-            throw new SQLException("Can't get data source");
-
-        //get database connection
-        Connection con = dataSource.getConnection();
-
-        if (con == null)
-            throw new SQLException("Can't get database connection");
-
-        PreparedStatement ps
-                = con.prepareStatement(
-                "SELECT DISTINCT term.acc, term.name FROM term LEFT JOIN term_synonym ON term.id = term_synonym.term_id WHERE term.name LIKE ? OR term_synonym.term_synonym LIKE ?");
-        ps.setString(1, "%" + name + "%");
-        ps.setString(2, "%" + name + "%");
-
-        //get customer data from database
-        ResultSet result = ps.executeQuery();
-
-        List<Term> list = new ArrayList<>();
-
-        while (result.next()) {
-            Term term = new Term();
-
-            term.setName(result.getString("name"));
-            term.setTag(result.getString("acc"));
-
-            //store all data into a List
-            list.add(term);
-        }
-
-        return list;
     }
 
     public List<Term> getTermStartingWithText(String query) throws SQLException {
@@ -519,6 +465,26 @@ public class HPOController implements Serializable {
     }
 
 
+    private List<Term> addDescriptionToTerms(List<Term> terms) {
+        try {
+            Connection connection = dataSource.getConnection();
+            PreparedStatement ps;
+            ResultSet resultSet;
+
+            for (Term currentTerm : terms) {
+                ps = connection.prepareStatement("select term_definition from hpo.term_definition where term_definition.term_id = '" + currentTerm.id + "'");
+                resultSet = ps.executeQuery();
+                while (resultSet.next()) {
+                    currentTerm.setDescription(resultSet.getString("term_definition"));
+                }
+            } // for
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return terms;
+    }
+
     /**
      * Formats output highlighting terms. Example:
      * 'The patient had large hands. Suffering from psychotic episodes the patient is just in sickbed.'
@@ -571,9 +537,7 @@ public class HPOController implements Serializable {
         return originalString.toString();
     } // formatOutput
 
-    /* Done: Add interface to select the patient and the visit in addition to the existing text field that has the info of additional_text */
-    /* Done: Fill the Klinik database with some sample data. Feel like you are in a english hospital. You can also look at the HPO table to see term examples */
-    /* TODO: Create Format where the term and the text where it was found are connected */
-    /* Done: Show tooltip with the Term and its description when a user moves the mouse over the associated text. Underline all of these associated texts */
-    /* TODO: Create Button where automated the latest visit of each patient is processed */
+    public List<Term> getOutputHPOTags() {
+        return outputHPOTags;
+    }
 }

@@ -2,25 +2,11 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
         "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml"
-      xmlns:f="http://java.sun.com/jsf/core"
       xmlns:h="http://java.sun.com/jsf/html"
       xmlns:p="http://primefaces.org/ui">
 
 <h:head>
     <title>MedHPO</title>
-    <link rel="stylesheet" href="/jquery-ui.css" />
-    <script src="/jquery-1.9.1.js"></script>
-    <script src="/jquery-ui.js"></script>
-    <script>
-        $(function() {
-        $( document ).tooltip({ position: { my: "left-15 bottom", at: "right-50 top" },
-        content: function(callback) {
-        callback($(this).prop('title').replace(new RegExp("-br-","g"), '<br />'));
-        },
-        hide: { effect: "fadeOut", duration: 400 }
-        });
-        });
-    </script>
 </h:head>
 <h:body>
     <h:form>
@@ -29,16 +15,30 @@
             <p:menuitem value="Select Visit" url="/visitList.xhtml" icon="ui-icon-contact"/>
             <p:menuitem value="Process All Visits" action="processAllVisits"/>
         </p:menubar>
-
-        <!--<h:outputText value="#{HPOController.processAllVisits}"/>-->
     </h:form>
     <br/>
     Input:
-    <!--<h:outputText value="#{HPOController.textToProcess}"/>-->
-    <h:outputText escape="false" id="inputText" value="#{HPOController.outputText}"/>
+    <h:outputText escape="false" id="inputText" value="#{HPOController.textToProcess}"/>
     <br />
     <br />
-    Processed:
-    <h:outputText value="#{HPOController.debugMessage}"/>
+
+    Text:
+    <h:outputText escape="false" id="outputText" value="#{HPOController.outputText}"/>
+    <br/>
+    <br/>
+    HPO-Tags:
+    <p:dataTable var="tag" value="#{HPOController.outputHPOTags}">
+        <p:column headerText="HPO ID">
+            <h:outputText value="#{tag.tag}"/>
+        </p:column>
+
+        <p:column headerText="Name">
+            <h:outputText value="#{tag.name}"/>
+        </p:column>
+
+        <p:column headerText="Description">
+            <h:outputText value="#{tag.description}"/>
+        </p:column>
+    </p:dataTable>
 </h:body>
 </html>

@@ -1,13 +1,11 @@
 package Main.model;
 
-/**
- * Created by lukas on 17.06.13.
- */
 public class Term {
 
     public String name;
     public String tag;
     public String id;
+    public String description;
 
     public int startIndex;
     public int endIndex;
@@ -52,6 +50,14 @@ public class Term {
         this.id = id;
     }
 
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
     @Override
     public String toString() {
         return this.getName();
@@ -59,15 +65,6 @@ public class Term {
 
 
     public String jsonDescription() {
-        StringBuilder builder = new StringBuilder();
-        builder.append("{");
-        builder.append("start:");
-        builder.append(this.getStartIndex());
-        builder.append(",end:");
-        builder.append(this.getEndIndex());
-        builder.append(",id:");
-        builder.append(this.getId());
-        builder.append("}");
-        return builder.toString();
+        return "{" + "start:" + this.getStartIndex() + ",end:" + this.getEndIndex() + ",id:" + this.getId() + "}";
     }
 }
