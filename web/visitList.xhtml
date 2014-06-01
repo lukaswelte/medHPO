@@ -9,45 +9,44 @@
     <title>MedHPO - Visit List</title>
 </h:head>
 <h:body>
-     <h:form id="form">
-         <p:menubar autoDisplay="false">
-             <p:menuitem value="Home" url="/index.xhtml" icon="ui-icon-home"/>
-             <p:menuitem value="Select Visit" url="/visitList.xhtml" icon="ui-icon-contact"/>
-             <p:menuitem value="Process All Visits" action="processAllVisits"/>
-         </p:menubar>
+    <h:form id="form">
+        <p:menubar autoDisplay="false">
+            <p:menuitem value="Home" url="/index.xhtml" icon="ui-icon-home"/>
+            <p:menuitem value="Select Visit" url="/visitList.xhtml" icon="ui-icon-contact"/>
+            <p:menuitem value="Process All Visits" action="processAllVisits"/>
+        </p:menubar>
 
-         <br/>
-         <br/>
-         <p:dataTable id="visits" var="visit" value="#{tableBean.visitDataModel}" paginator="true" rows="10"
-                      >
+        <br/>
+        <br/>
+        <p:dataTable id="visits" var="visit" value="#{tableBean.visitDataModel}" paginator="true" rows="10"
+                >
 
+            <p:column headerText="Patient">
+                #{visit.patientID}
+            </p:column>
 
-             <p:column headerText="Patient">
-                 #{visit.patientID}
-             </p:column>
+            <p:column headerText="Date">
+                #{visit.date}
+            </p:column>
 
-             <p:column headerText="Date">
-                 #{visit.date}
-             </p:column>
+            <p:column headerText="Symptoms">
+                #{visit.symptoms}
+            </p:column>
 
-             <p:column headerText="Symptoms" >
-                 #{visit.symptoms}
-             </p:column>
-
-             <p:column id="column_edit">
+            <p:column id="column_edit">
                 <f:facet name="header">
-                 <h:outputText value="Actions" />
+                    <h:outputText value="Actions"/>
                 </f:facet>
                 <p:commandButton
-                     id="commanLink"
-                     value="Show"
-                     action="#{ tableBean.showVisitDetail(visit.id)}">
-                 <f:setPropertyActionListener value="#{visit}" target="#{tableBean.selectedVisit}" />
-                 </p:commandButton>
-             </p:column>
-         </p:dataTable>
+                        id="commanLink"
+                        value="Show"
+                        action="#{ tableBean.showVisitDetail(visit.id)}">
+                    <f:setPropertyActionListener value="#{visit}" target="#{tableBean.selectedVisit}"/>
+                </p:commandButton>
+            </p:column>
+        </p:dataTable>
 
 
-     </h:form>
+    </h:form>
 </h:body>
 </html>

@@ -7,12 +7,10 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-/**
- * Created by lukas on 18.06.13.
- */
 public class TermSearchCandidate {
     private String[] words;
     private String[] tags;
+    private Span span;
 
     public Span getSpan() {
         return span;
@@ -21,8 +19,6 @@ public class TermSearchCandidate {
     public void setSpan(Span span) {
         this.span = span;
     }
-
-    private Span span;
 
     public String[] getTags() {
         return tags;
@@ -47,34 +43,34 @@ public class TermSearchCandidate {
     }
 
     public List<String[]> getSearchStrings() {
-        List<String[]> result = new ArrayList<String[]>();
+        List<String[]> result = new ArrayList<>();
 
         String[] wordsForSearch = null;
-        String tag = null;
-        for (int i = 0; i<words.length; i++) {
+        String tag;
+        for (int i = 0; i < words.length; i++) {
             tag = tags[i];
             if (("NN").equals(tag) || ("NNS").equals(tag) || ("NNP").equals(tag) || ("NNPS").equals(tag)) {
                 result.add(new String[]{words[i]});
-                if (i>0 && i<words.length-2) {
+                if (i > 0 && i < words.length - 2) {
                     wordsForSearch = new String[3];
-                    wordsForSearch[0] = words[i-1];
+                    wordsForSearch[0] = words[i - 1];
                     wordsForSearch[1] = words[i];
-                    wordsForSearch[2] = words[i+1];
-                }  else if (i>0) {
+                    wordsForSearch[2] = words[i + 1];
+                } else if (i > 0) {
                     wordsForSearch = new String[2];
-                    wordsForSearch[0] = words[i-1];
+                    wordsForSearch[0] = words[i - 1];
                     wordsForSearch[1] = words[i];
-                }  else if (i<(words.length-2)) {
+                } else if (i < (words.length - 2)) {
                     wordsForSearch = new String[2];
                     wordsForSearch[1] = words[i];
-                    wordsForSearch[2] = words[i+1];
+                    wordsForSearch[2] = words[i + 1];
                 }
             }
         }
 
-        int i = 0;
-        String[] permutations = null;
-        Permutations<String> stringPermutations = null;
+        int i;
+        String[] permutations;
+        Permutations<String> stringPermutations;
         if (wordsForSearch != null) {
             permutations = new String[wordsForSearch.length];
             stringPermutations = Permutations.create(wordsForSearch, permutations);
@@ -99,9 +95,70 @@ public class TermSearchCandidate {
         i = 0;
         permutations = new String[words.length];
         stringPermutations = Permutations.create(words, permutations);
-        while (i<50 && stringPermutations.next()) {
-           result.add(permutations.clone());
-           i++;
+        while (i < 50 && stringPermutations.next()) {
+            result.add(permutations.clone());
+            i++;
+        }
+
+        return result;
+    }
+
+    public List<String[]> getSearchStrings() {
+        List<String[]> result = new ArrayList<>();
+
+        String[] wordsForSearch = null;
+        String tag;
+        for (int i = 0; i < words.length; i++) {
+            tag = tags[i];
+            if (("NN").equals(tag) || ("NNS").equals(tag) || ("NNP").equals(tag) || ("NNPS").equals(tag)) {
+                result.add(new String[]{words[i]});
+                if (i > 0 && i < words.length - 2) {
+                    wordsForSearch = new String[3];
+                    wordsForSearch[0] = words[i - 1];
+                    wordsForSearch[1] = words[i];
+                    wordsForSearch[2] = words[i + 1];
+                } else if (i > 0) {
+                    wordsForSearch = new String[2];
+                    wordsForSearch[0] = words[i - 1];
+                    wordsForSearch[1] = words[i];
+                } else if (i < (words.length - 2)) {
+                    wordsForSearch = new String[2];
+                    wordsForSearch[1] = words[i];
+                    wordsForSearch[2] = words[i + 1];
+                }
+            }
+        }
+
+        int i;
+        String[] permutations;
+        Permutations<String> stringPermutations;
+        if (wordsForSearch != null) {
+            permutations = new String[wordsForSearch.length];
+            stringPermutations = Permutations.create(wordsForSearch, permutations);
+            while (stringPermutations.next()) {
+                result.add(permutations.clone());
+            }
+
+            if (wordsForSearch.length > 2) {
+                String[] subArr = new String[2];
+                subArr[0] = wordsForSearch[1];
+                subArr[1] = wordsForSearch[2];
+                i = 0;
+                permutations = new String[subArr.length];
+                stringPermutations = Permutations.create(subArr, permutations);
+                while (i < 50 && stringPermutations.next()) {
+                    result.add(permutations.clone());
+                    i++;
+                }
+            }
+        }
+
+        i = 0;
+        permutations = new String[words.length];
+        stringPermutations = Permutations.create(words, permutations);
+        while (i < 50 && stringPermutations.next()) {
+            result.add(permutations.clone());
+            i++;
         }
 
         return result;
@@ -114,15 +171,25 @@ public class TermSearchCandidate {
                 '}';
     }
 
-    public static String arrayToString2(String[] a, String separator) {
-        StringBuilder result = new StringBuilder();
-        if (a.length > 0) {
-            result.append(a[0]);
-            for (int i=1; i<a.length; i++) {
-                result.append(separator);
-                result.append(a[i]);
+    public static List<TermSearchCandidate> termSearchCandidates(String[] words, String[] tags, Span[] spans) {
+        List<TermSearchCandidate> result = new ArrayList<>();
+
+        for (Span span : spans) {
+            if (span.getType().equals("NP")) {
+
+                String[] w = new String[span.length()];
+                String[] t = new String[span.length()];
+                int startPoint = span.getStart();
+                for (int i = startPoint; i < span.getEnd(); i++) {
+                    int index = i - startPoint;
+                    w[index] = words[i];
+                    t[index] = tags[i];
+                }
+
+                result.add(new TermSearchCandidate(w, t, span));
             }
         }
-        return result.toString();
+
+        return result;
     }
 }

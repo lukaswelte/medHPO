@@ -17,17 +17,19 @@
         </p:menubar>
         <br/>
 
-        Visit Date: <p:outputLabel value="#{tableBean.selectedVisit.date}"></p:outputLabel> <br/>
+        Visit Date: <p:outputLabel value="#{tableBean.selectedVisit.date}"/> <br/>
 
-        Diagnose: <p:outputLabel value="#{tableBean.selectedVisit.symptoms}"></p:outputLabel>
+        Diagnose: <p:outputLabel value="#{tableBean.selectedVisit.symptoms}"/>
 
         <br/><br/>
         Additional Text:<br/>
-        <p:inputTextarea rows="3" cols="45" completeMethod="#{HPOController.autocompleteHPO}" queryDelay="50" minQueryLength="2" value="#{ tableBean.selectedVisit.additionalText }"/>
+        <p:inputTextarea rows="3" cols="45" completeMethod="#{HPOController.autocompleteHPO}" queryDelay="50"
+                         minQueryLength="2" value="#{ tableBean.selectedVisit.additionalText }"/>
         <br/>
         <h:commandButton value="Process Additional Text" action="processText">
-            <f:setPropertyActionListener value="#{tableBean.selectedVisit.id}" target="#{HPOController.selectedVisit}" />
-            <f:setPropertyActionListener value="#{tableBean.selectedVisit.additionalText}" target="#{HPOController.textToProcess}" />
+            <f:setPropertyActionListener value="#{tableBean.selectedVisit}" target="#{HPOController.selectedVisit}"/>
+            <f:setPropertyActionListener value="#{tableBean.selectedVisit.additionalText}"
+                                         target="#{HPOController.textToProcess}"/>
         </h:commandButton>
     </h:form>
 </h:body>

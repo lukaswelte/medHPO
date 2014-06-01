@@ -3,12 +3,12 @@ package Main;
 import Main.model.Term;
 import Main.model.TermSearchCandidate;
 import Main.model.Visit;
-import opennlp.tools.postag.POSModel;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.Resource;
 import javax.faces.bean.ManagedBean;
-import javax.faces.bean.SessionScoped;
+import javax.faces.bean.ViewScoped;
+import javax.faces.event.ValueChangeEvent;
 import javax.sql.DataSource;
 import java.io.IOException;
 import java.io.Serializable;
@@ -22,7 +22,7 @@ import java.util.List;
 import java.util.Map;
 
 @ManagedBean(name="HPOController")
-@SessionScoped
+@ViewScoped
 public class HPOController implements Serializable {
 
     public static String anonymizedString;
@@ -33,9 +33,8 @@ public class HPOController implements Serializable {
     public static int name_finding_in_ms;
     public static int chunking_in_ms;
     public static List<Visit> visits;
-    public static int selectedVisit;
+    public static Visit selectedVisit;
     public static String outputText;
-    public static String debugMessage;
     public static String hpoMatches;
     public static String hpoMultipleMatches;
     public static int numberFoundNames;
@@ -45,21 +44,7 @@ public class HPOController implements Serializable {
     @Resource(lookup = "jdbc/klinik")
     private DataSource klinikDataSource;
     private String textToProcess = "Jerome had large hands. Suffering from psychotic episodes the patient is just in sickbed. A Prolactin excess made it really hard.";
-    private POSModel model;
     private List<Term> outputHPOTags;
-
-    public static String getJSONStringFromList(List<Term> list) {
-        StringBuilder stringBuilder = new StringBuilder("[");
-
-        for (Term t : list) {
-            stringBuilder.append(t.jsonDescription());
-            stringBuilder.append(",");
-        }
-        stringBuilder.deleteCharAt(stringBuilder.length() - 1);
-        stringBuilder.append("]");
-
-        return stringBuilder.toString();
-    }
 
     public String getTextToProcess() {
         return textToProcess;
@@ -74,25 +59,7 @@ public class HPOController implements Serializable {
      */
     @PostConstruct
     public void init() {
-        Connection klinikConnection;
-        visits = null;
-        try {
-            klinikConnection = klinikDataSource.getConnection();
-            PreparedStatement ps = klinikConnection.prepareStatement("SELECT id,  patient_id, date FROM visit");
-            ResultSet resultSet = ps.executeQuery();
-
-            visits = new ArrayList<>();
-
-            while (resultSet.next()) {
-                visits.add(new Visit(resultSet.getInt(1), resultSet.getInt(2), resultSet.getString(3), "", ""));
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-    }
-
-    private POSModel getModel() {
-        return this.model;
+        visits = Visit.getAllVisits(klinikDataSource);
     }
 
     public String posTextToProcess() {
@@ -100,16 +67,13 @@ public class HPOController implements Serializable {
             return "No Text to process";
         }
 
-
         return posText(textToProcess);
     }
 
-    public String posText(String string) {
+    private String posText(String string) {
         //Start Time Measurement
         long start = System.nanoTime();
         long last = start;
-
-        HPOController hpoController = new HPOController();
 
         List<TermSearchCandidate> termSearchCandidates = null;
         try {
@@ -119,48 +83,21 @@ public class HPOController implements Serializable {
         }
 
         assert termSearchCandidates != null;
-        System.out.println("\n\n\n128: termSearchCandidates.size = " + termSearchCandidates.size()
-                + ",  termSearchCandidates: " + termSearchCandidates + "\n\n");
 
         // Print Measurement
         double elapsedTimeInSec = (System.nanoTime() - last) * 1.0e-9;
         System.out.println("Text Processing Time: " + elapsedTimeInSec);
         last = System.nanoTime();
 
-        HashMap<TermSearchCandidate, List<Term>> foundTerms = new HashMap<TermSearchCandidate, List<Term>>();
-
-
+        HashMap<TermSearchCandidate, List<Term>> foundTerms = new HashMap<>();
         List<Term> terms;
         List<Term> hpoMatchList = new ArrayList<>(5);
         List<List<Term>> hpoMultipleMatchList = new ArrayList<>(5);
 
-        //Open Database Connection
-        Connection con = null;
-        try {
-            //get database connection
-            con = dataSource.getConnection();
-
-            if (con == null)
-                throw new SQLException("Can't get database connection");
-
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
-        if (con == null) {
-            return "No Database connection";
-        }
-
-        // Print Measurement
-        elapsedTimeInSec = (System.nanoTime() - last) * 1.0e-9;
-        System.out.println("Opening Database: " + elapsedTimeInSec);
-        last = System.nanoTime();
-
         for (TermSearchCandidate candidate : termSearchCandidates) {
             try {
-                terms = hpoController.getTermsForCandidate(candidate, con);
+                terms = Term.getTermsForCandidate(candidate, dataSource);
                 if (terms != null && terms.size() > 0) {
-                    //System.out.println("\n\n177: candidate: " + candidate + " -------\nterms.size: " + terms.size() + ", terms: " + terms + " ------\n\n");
                     if (terms.size() == 1) {
                         hpoMatchList.add(terms.get(0));
                     } else {
@@ -178,19 +115,6 @@ public class HPOController implements Serializable {
         elapsedTimeInSec = (System.nanoTime() - last) * 1.0e-9;
         System.out.println("Search Database: " + elapsedTimeInSec);
         last = System.nanoTime();
-
-        //Close Database Connection
-        try {
-            con.close();
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-
-        // Print Measurement
-        elapsedTimeInSec = (System.nanoTime() - last) * 1.0e-9;
-        System.out.println("Close Database: " + elapsedTimeInSec);
-        last = System.nanoTime();
-
         if (foundTerms.size() > 0) {
             System.out.println("\n Found Terms:");
             for (Map.Entry<TermSearchCandidate, List<Term>> entry : foundTerms.entrySet()) {
@@ -201,13 +125,10 @@ public class HPOController implements Serializable {
             // Print Measurement
             elapsedTimeInSec = (System.nanoTime() - last) * 1.0e-9;
             System.out.println("Print results: " + elapsedTimeInSec);
-            last = System.nanoTime();
 
             // Print Measurement
             elapsedTimeInSec = (System.nanoTime() - start) * 1.0e-9;
             System.out.println("Overall Time: " + elapsedTimeInSec);
-
-            debugMessage = foundTerms.toString();
 
             if (anonymizedString != null && !anonymizedString.equals("")) {
                 string = anonymizedString;
@@ -215,15 +136,15 @@ public class HPOController implements Serializable {
 
             hpoMatches = "";
             if ((hpoMatchList.size() > 0)) {
-                HPOController.outputText = formatOutput(string, hpoMatchList);
+                HPOController.outputText = Term.enhanceStringWithTerms(string, hpoMatchList, dataSource);
                 outputHPOTags = addDescriptionToTerms(hpoMatchList);
 
                 //Create String from Match Lists
-                hpoMatches = HPOController.getJSONStringFromList(hpoMatchList);
+                hpoMatches = Term.getJSONStringFromList(hpoMatchList);
 
                 StringBuilder stringBuilder = new StringBuilder("[");
                 for (List<Term> termList : hpoMultipleMatchList) {
-                    stringBuilder.append(HPOController.getJSONStringFromList(termList));
+                    stringBuilder.append(Term.getJSONStringFromList(termList));
                     stringBuilder.append(",");
                 }
                 stringBuilder.deleteCharAt(stringBuilder.length() - 1);
@@ -231,15 +152,12 @@ public class HPOController implements Serializable {
                 hpoMultipleMatches = stringBuilder.toString();
             }
 
-            saveVisitAndHPOInfo(); // save data to klinik database
-
             return "processResult";
         }
 
         // Print Measurement
         elapsedTimeInSec = (System.nanoTime() - last) * 1.0e-9;
         System.out.println("Print results: " + elapsedTimeInSec);
-        last = System.nanoTime();
 
         // Print Measurement
         elapsedTimeInSec = (System.nanoTime() - start) * 1.0e-9;
@@ -247,127 +165,14 @@ public class HPOController implements Serializable {
         return "processResult";//return "Finished";
     }
 
-    public List<Term> getTermsForCandidate(TermSearchCandidate candidate, Connection con) throws SQLException {
 
-
-        List<Term> result = null;
-        List<String[]> candidateSearchStrings = candidate.getSearchStrings();
-        for (String[] words : candidateSearchStrings) {
-
-            //Build search values
-            StringBuilder buffer = new StringBuilder("%");
-            for (String s : words) {
-                buffer.append(s);
-                buffer.append("%");
-            }
-            String bufferedString = buffer.toString();
-
-
-            //Check for too much data
-            PreparedStatement ps = con.prepareStatement("SELECT DISTINCT count(*) FROM term LEFT JOIN term_synonym ON term.id = term_synonym.term_id WHERE term.name LIKE ? OR term_synonym.term_synonym LIKE ?");
-            ps.setString(1, bufferedString);
-            ps.setString(2, bufferedString);
-            ResultSet resultSet = ps.executeQuery();
-            if (resultSet.next()) {
-                int numberOfRows = resultSet.getInt(1);
-                if (numberOfRows > 10) continue;
-            } else {
-                System.out.println("Error fetching count");
-            }
-            resultSet.close();
-            ps.close();
-
-            //Fetch Data
-            ps = con.prepareStatement("SELECT DISTINCT term.id, term.acc, term.name FROM term LEFT JOIN term_synonym ON term.id = term_synonym.term_id WHERE term.name LIKE ? OR term_synonym.term_synonym LIKE ?");
-            ps.setString(1, bufferedString);
-            ps.setString(2, bufferedString);
-
-
-            //get customer data from database
-            resultSet = ps.executeQuery();
-
-            List<Term> list = new ArrayList<>();
-
-            while (resultSet.next()) {
-                Term term = new Term();
-
-                term.setName(resultSet.getString("name"));
-                term.setTag(resultSet.getString("acc"));
-                term.setId(resultSet.getString("id"));
-
-                //store all data into a List
-                list.add(term);
-            }
-
-            //Too much results
-            if (list.size() > 10) continue;
-
-            if (result == null || (result.size() > list.size() && list.size() > 0)) {
-                result = list;
-            }
-        }
-        return result;
-    }
-
-    public List<Term> getTermStartingWithText(String query) throws SQLException {
-        if (dataSource == null)
-            throw new SQLException("Can't get data source");
-
-        //get database connection
-        Connection con = dataSource.getConnection();
-
-        if (con == null)
-            throw new SQLException("Can't get database connection");
-
-        PreparedStatement ps = con.prepareStatement(
-                "SELECT DISTINCT acc, name FROM term WHERE term.name LIKE ?");
-        ps.setString(1, query + "%");
-
-        //get customer data from database
-        ResultSet result = ps.executeQuery();
-
-        List<Term> list = new ArrayList<>();
-
-        while (result.next()) {
-            Term term = new Term();
-
-            term.setName(result.getString("name"));
-            term.setTag(result.getString("acc"));
-
-            //store all data into a List
-            list.add(term);
-        }
-
-        ps = con.prepareStatement(
-                "SELECT DISTINCT term_synonym, acc FROM term_synonym JOIN term ON term_synonym.term_id = term.id WHERE term_synonym LIKE ?");
-        ps.setString(1, query + "%");
-
-        //get customer data from database
-        result = ps.executeQuery();
-
-        while (result.next()) {
-            Term term = new Term();
-
-            term.setName(result.getString("term_synonym"));
-            term.setTag(result.getString("acc"));
-
-            //store all data into a List
-            list.add(term);
-        }
-
-        //Too much data
-        if (list.size() > 20) list.clear();
-
-        return list;
-    }
 
     public List<String> autocompleteHPO(String query) {
         List<String> results = new ArrayList<>();
 
-        HPOController hpoController = new HPOController();
         List<Term> terms = null;
         try {
-            terms = hpoController.getTermStartingWithText(query);
+            terms = Term.getTermStartingWithText(query, dataSource);
         } catch (SQLException e) {
             e.printStackTrace();
         }
@@ -386,12 +191,16 @@ public class HPOController implements Serializable {
         return visits;
     }
 
-    public int getSelectedVisit() {
+    public Visit getSelectedVisit() {
         return selectedVisit;
     }
 
-    public void setSelectedVisit(int visitId) {
-        selectedVisit = visitId;
+    public void setSelectedVisit(Visit visit) {
+        selectedVisit = visit;
+    }
+
+    public void selectedVisitChanged(ValueChangeEvent evt) {
+        setSelectedVisit((Visit) evt.getNewValue());
     }
 
     public String getOutputText() {
@@ -399,71 +208,9 @@ public class HPOController implements Serializable {
         return HPOController.outputText;
     }
 
-    public String getDebugMessage() {
-        return HPOController.debugMessage;
-    }
-
-    private Boolean saveToDatabase() throws SQLException {
-
-        Connection con = klinikDataSource.getConnection();
-
-        /* Done: Save Anonymized Text back into Visits */
-        /* TODO: Save Statistics and found data in HPO-Infos Table and reference it to the visit. Save absolut matches (one term in the match) in the hpo_matches field and matches with multiple terms in the hpo_multiple_matches */
-
-        return true;
-    }
-
-    /**
-     * Save data to visit and hpoinfo table
-     */
-    private void saveVisitAndHPOInfo() {
-        try {
-            Connection klinikConnection = klinikDataSource.getConnection();
-            PreparedStatement ps = klinikConnection.prepareStatement("UPDATE visit SET additional_text = '"
-                    + anonymizedString + "' WHERE id = " + selectedVisit);
-            ps.executeUpdate();
-
-            if (selectedVisit != 0) {
-                ps = klinikConnection.prepareStatement("SELECT MAX(id) FROM hpoinfo");
-                ResultSet resultSet = ps.executeQuery();
-
-                int highestID = 0;
-                if (resultSet.next()) {
-                    highestID = resultSet.getInt(1);
-                }
-
-                String hpoMatchesValueToInsert = "";
-                if (hpoMatches != null) {
-                    hpoMatchesValueToInsert = hpoMatches;
-                }
-
-                String hpoMultipleMatchesValueToInsert = "";
-                if (hpoMultipleMatches != null) {
-                    hpoMultipleMatchesValueToInsert = hpoMultipleMatches;
-                }
-
-                String SQL = "INSERT INTO hpoinfo VALUES ("
-                        + (highestID + 1) + ", " + selectedVisit + ", '"
-                        + hpoMatchesValueToInsert + "', " + numberFoundNames + ", '" + hpoMultipleMatchesValueToInsert + "',"
-                        + sentence_detection_and_tokenization_in_ms + ", "
-                        + name_finding_in_ms + ", "
-                        + chunking_in_ms + ")";
-                System.out.println("INSERT SQL:  " + SQL);
-
-
-                ps = klinikConnection.prepareStatement(SQL);
-                ps.executeUpdate();
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-    }
-
     public String getProcessAllVisits() {
-        //TODO: Process all visits
         return "Finished Processing all visits";
     }
-
 
     private List<Term> addDescriptionToTerms(List<Term> terms) {
         try {
@@ -472,12 +219,12 @@ public class HPOController implements Serializable {
             ResultSet resultSet;
 
             for (Term currentTerm : terms) {
-                ps = connection.prepareStatement("select term_definition from hpo.term_definition where term_definition.term_id = '" + currentTerm.id + "'");
+                ps = connection.prepareStatement("select term_definition from hpo.term_definition where term_definition.term_id = '" + currentTerm.getId() + "'");
                 resultSet = ps.executeQuery();
                 while (resultSet.next()) {
                     currentTerm.setDescription(resultSet.getString("term_definition"));
                 }
-            } // for
+            }
 
         } catch (SQLException e) {
             e.printStackTrace();
@@ -485,59 +232,16 @@ public class HPOController implements Serializable {
         return terms;
     }
 
-    /**
-     * Formats output highlighting terms. Example:
-     * 'The patient had large hands. Suffering from psychotic episodes the patient is just in sickbed.'
-     * Would be transformed into
-     * 'The patient had <em>large hands</em>. Suffering from <em>psychotic episodes</em> the patient is just in sickbed.'
-     * @param originalStr  The input string
-     * @param terms   The term list
-     * @return Formatted String
-     */
-    private String formatOutput(String originalStr, List<Term> terms) {
-        StringBuffer originalString = new StringBuffer(originalStr);
-        //boolean found = true;
-        int beginIndex;
-        int endIndex;
-        try {
-            Connection connection = dataSource.getConnection();
-            PreparedStatement ps;
-            ResultSet resultSet;
-            String definition;
-            String titleTag;
-
-            for (Term currentTerm: terms) {
-                String currentTermName = currentTerm.name;
-                if (originalString.toString().toLowerCase().contains(currentTermName.toLowerCase())) {
-                    ps = connection.prepareStatement("select term_definition from hpo.term_definition where term_definition.term_id = '"+currentTerm.id+"'");
-                    resultSet =  ps.executeQuery();
-                    definition = "";
-                    while(resultSet.next()) {
-                        definition += resultSet.getString("term_definition");
-                    }
-
-                    titleTag = "title='Name: " + currentTerm.name + "-br-" + currentTerm.tag;
-                    if (!(definition.equals(""))) {
-                        titleTag += "-br--br-Definition: " + definition + "'";
-                    }
-                    titleTag += "'";
-
-                    beginIndex = originalString.toString().toLowerCase().indexOf(currentTermName.toLowerCase());
-                    endIndex = beginIndex + currentTermName.length();
-                    currentTerm.startIndex = beginIndex;
-                    currentTerm.endIndex = endIndex;
-                    originalString = originalString.insert(endIndex, "</span>");
-                    originalString = originalString.insert(beginIndex, "<span " + titleTag + " style='text-decoration: underline;'>");
-                }
-            } // for
-
-        } catch(SQLException e) {
-            e.printStackTrace();
-        }
-        return originalString.toString();
-    } // formatOutput
-
     public List<Term> getOutputHPOTags() {
         return outputHPOTags;
+    }
+
+    public String deleteTerm(Term deleteTerm) {
+        outputHPOTags.remove(deleteTerm);
+        return null;
+    }
+
+    public String processSelectedVisit() {
+        return "/visitDetail.xhtml?faces-redirect=true&id=" + selectedVisit.getId();
     }
 }

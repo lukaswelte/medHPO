@@ -9,18 +9,12 @@ import javax.faces.bean.ManagedBean;
 import javax.faces.bean.SessionScoped;
 import javax.faces.model.ListDataModel;
 import javax.sql.DataSource;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.List;
 
 @ManagedBean(name = "tableBean")
 @SessionScoped
 public class TableBean {
 
-    public int selectedVisitId;
     @Resource(lookup = "jdbc/klinik")
     private DataSource klinikDataSource;
     private Visit selectedVisit;
@@ -28,24 +22,7 @@ public class TableBean {
 
     @PostConstruct
     public void init() {
-        List<Visit> visitList = new ArrayList<>();
-
-        Connection klinikConnection;
-        try {
-            klinikConnection = klinikDataSource.getConnection();
-            PreparedStatement ps = klinikConnection.prepareStatement("SELECT * FROM Visit");
-            ResultSet resultSet = ps.executeQuery();
-
-            while (resultSet.next()) {
-                Visit visit = new Visit(resultSet.getInt("id"), resultSet.getInt("patient_id"), resultSet.getString("date"), resultSet.getString("symptoms"), resultSet.getString("additional_text"));
-                visitList.add(visit);
-            }
-
-        } catch (SQLException ignored) {
-
-        }
-
-        visitDataModel = new VisitDataModel(visitList);
+        visitDataModel = new VisitDataModel(Visit.getAllVisits(klinikDataSource));
     }
 
     public Visit getSelectedVisit() {
@@ -67,8 +44,7 @@ public class TableBean {
      * @return the navigation string
      */
     public String showVisitDetail(Integer id) {
-        this.selectedVisitId = id;
-        return "showVisitDetail";
+        return "/visitDetail.xhtml?faces-redirect=true&id=" + id;
     }
 }
 

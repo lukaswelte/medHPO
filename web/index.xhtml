@@ -4,7 +4,6 @@
 <html xmlns="http://www.w3.org/1999/xhtml"
       xmlns:f="http://java.sun.com/jsf/core"
       xmlns:h="http://java.sun.com/jsf/html"
-      xmlns:ui="http://xmlns.jcp.org/jsf/facelets"
       xmlns:p="http://primefaces.org/ui">
 <h:head>
     <title>MedHPO</title>
@@ -18,15 +17,20 @@
             <p:menuitem value="Process All Visits" action="processAllVisits"/>
         </p:menubar>
 
-        Patient visit:<br/>
-        <h:selectOneListbox value="#{HPOController.selectedVisit}" style="width: 150px; height:120px;">
-            <f:selectItems value="#{HPOController.visits}" var="v" itemValue="#{v.id}" itemLabel="#{v.patientID}&nbsp;-&nbsp;#{v.date}" />
-        </h:selectOneListbox>
-        <br/><br/>
-        Additional Text:<br/>
-        <p:inputTextarea rows="3" cols="45" completeMethod="#{HPOController.autocompleteHPO}" queryDelay="50" minQueryLength="2" value="#{ HPOController.textToProcess }"/>
-        <br/>
-        <h:commandButton value="Submit" action="processText"/>
+        <h:panelGrid columns="2">
+            Patient visit:
+            <h:selectOneMenu value="#{HPOController.selectedVisit}" style="width: 150px; height:120px;"
+                             defaultLabel="Select a visit.." onchange="submit()"
+                             valueChangeListener="#{HPOController.selectedVisitChanged}">
+                <f:selectItems value="#{HPOController.visits}"/>
+            </h:selectOneMenu>
+
+            Additional Text:
+            <p:inputTextarea id="additionalinfo" rows="3" cols="45" completeMethod="#{HPOController.autocompleteHPO}"
+                             queryDelay="50" minQueryLength="2" value="#{HPOController.selectedVisit}"/>
+            <br/>
+        </h:panelGrid>
+        <h:commandButton value="Submit" action="#{HPOController.processSelectedVisit}"/>
     </h:form>
 </h:body>
 </html>

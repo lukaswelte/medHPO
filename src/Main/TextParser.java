@@ -8,75 +8,49 @@ import opennlp.tools.cmdline.postag.POSModelLoader;
 import opennlp.tools.namefind.NameFinderME;
 import opennlp.tools.namefind.TokenNameFinderModel;
 import opennlp.tools.postag.POSModel;
-import opennlp.tools.postag.POSSample;
 import opennlp.tools.postag.POSTaggerME;
 import opennlp.tools.tokenize.SimpleTokenizer;
-import opennlp.tools.tokenize.WhitespaceTokenizer;
 import opennlp.tools.util.ObjectStream;
 import opennlp.tools.util.PlainTextByLineStream;
 import opennlp.tools.util.Span;
 
 import java.io.*;
-import java.util.ArrayList;
 import java.util.List;
 
 public class TextParser {
 
-    public static String[] chunk(String text) throws IOException {
+    private static POSModel mModel;
+    private static POSTaggerME mTagger;
+    private static ChunkerME mChunker;
 
-        POSModel model = new POSModelLoader()
-                .load(new File("en-pos-maxent.bin"));
-        PerformanceMonitor perfMon = new PerformanceMonitor(System.err, "sent");
-        POSTaggerME tagger = new POSTaggerME(model);
-
-        ObjectStream<String> lineStream = new PlainTextByLineStream(
-                new StringReader(text));
-
-        perfMon.start();
-        String line;
-        String whitespaceTokenizerLine[] = null;
-
-        String[] tags = null;
-        while ((line = lineStream.read()) != null) {
-
-            whitespaceTokenizerLine = WhitespaceTokenizer.INSTANCE
-                    .tokenize(line);
-            tags = tagger.tag(whitespaceTokenizerLine);
-
-            //Debug only
-            POSSample sample = new POSSample(whitespaceTokenizerLine, tags);
-            System.out.println(sample.toString());
-            //
-
-            perfMon.incrementCounter();
+    private static POSModel posModel() {
+        if (mModel == null) {
+            mModel = new POSModelLoader()
+                    .load(new File("en-pos-maxent.bin"));
         }
-        perfMon.stopAndPrintFinalResult();
+        return mModel;
+    }
 
-        // chunker
-        InputStream is = new FileInputStream("en-chunker.bin");
-        ChunkerModel cModel = new ChunkerModel(is);
-
-        ChunkerME chunkerME = new ChunkerME(cModel);
-
-        /*
-        String result[] = chunkerME.chunk(whitespaceTokenizerLine, tags);
-        System.out.println("Chunks");
-        for (String s : result)
-            System.out.println(s);
-        */
-
-        System.out.println("Spans");
-        Span[] span = chunkerME.chunkAsSpans(whitespaceTokenizerLine, tags);
-        for (Span s : span)
-            System.out.println(s.toString());
-
-        System.out.println("Spans strings");
-        String[] strings = Span.spansToStrings(span, whitespaceTokenizerLine);
-        for (String s : strings) {
-            System.out.println(s);
+    private static POSTaggerME posTaggerME() {
+        if (mTagger == null) {
+            mTagger = new POSTaggerME(posModel());
         }
+        return mTagger;
+    }
 
-        return strings;
+    private static ChunkerME chunkerME() {
+        if (mChunker == null) {
+            InputStream is;
+            ChunkerModel cModel = null;
+            try {
+                is = new FileInputStream("en-chunker.bin");
+                cModel = new ChunkerModel(is);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            mChunker = new ChunkerME(cModel);
+        }
+        return mChunker;
     }
 
     public static List<TermSearchCandidate> chunkAndReturnCandidates(String string) throws IOException {
@@ -87,16 +61,13 @@ public class TextParser {
         PerformanceMonitor perfMon = new PerformanceMonitor(System.err, "Sentence Detection");
         perfMon.start();
         // Sentence
-        POSModel model = new POSModelLoader()
-                .load(new File("en-pos-maxent.bin"));
-        POSTaggerME tagger = new POSTaggerME(model);
+        POSTaggerME tagger = TextParser.posTaggerME();
 
         ObjectStream<String> lineStream = new PlainTextByLineStream(
                 new StringReader(string));
 
         String line;
         String sentence[] = null;
-
         String[] tags = null;
         while ((line = lineStream.read()) != null) {
 
@@ -105,8 +76,8 @@ public class TextParser {
             tags = tagger.tag(sentence);
 
             //Debug only
-            POSSample sample = new POSSample(sentence, tags);
-            System.out.println(sample.toString());
+            /*POSSample sample = new POSSample(sentence, tags);
+            System.out.println(sample.toString()); */
             //
 
             perfMon.incrementCounter();
@@ -137,6 +108,7 @@ public class TextParser {
         }
 
         StringBuilder backToSentence = new StringBuilder();
+        assert sentence != null;
         for (String s : sentence) {
             backToSentence.append(s);
             backToSentence.append(" ");
@@ -155,10 +127,7 @@ public class TextParser {
         perfMon.start();
 
         // chunker
-        InputStream is = new FileInputStream("en-chunker.bin");
-        ChunkerModel cModel = new ChunkerModel(is);
-
-        ChunkerME chunkerME = new ChunkerME(cModel);
+        ChunkerME chunkerME = TextParser.chunkerME();
 
         System.out.println("Spans");
         Span[] spans = chunkerME.chunkAsSpans(sentence, tags);
@@ -170,28 +139,6 @@ public class TextParser {
         HPOController.chunking_in_ms = (int) (elapsedTimeInSec * 1000);
         last = System.nanoTime();
 
-        return TextParser.termSearchCandidates(sentence, tags, spans);
-    }
-
-    public static List<TermSearchCandidate> termSearchCandidates(String[] words, String[] tags, Span[] spans) {
-        List<TermSearchCandidate> result = new ArrayList<TermSearchCandidate>();
-
-        for (Span span : spans) {
-            if (span.getType().equals("NP")) {
-
-                String[] w = new String[span.length()];
-                String[] t = new String[span.length()];
-                int startPoint = span.getStart();
-                for (int i = startPoint; i < span.getEnd(); i++) {
-                    int index = i - startPoint;
-                    w[index] = words[i];
-                    t[index] = tags[i];
-                }
-
-                result.add(new TermSearchCandidate(w, t, span));
-            }
-        }
-
-        return result;
+        return TermSearchCandidate.termSearchCandidates(sentence, tags, spans);
     }
 }

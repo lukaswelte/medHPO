@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+        "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:h="http://xmlns.jcp.org/jsf/html"
+      xmlns:f="http://java.sun.com/jsf/core"
+      xmlns:p="http://primefaces.org/ui">
+<h:head>
+    <title>MedHPO</title>
+</h:head>
+<h:body>
+    <h:form>
+        <p:menubar autoDisplay="false">
+            <p:menuitem value="Home" url="/index.xhtml" icon="ui-icon-home"/>
+            <p:menuitem value="Select Visit" url="/visitList.xhtml" icon="ui-icon-contact"/>
+            <p:menuitem value="Process All Visits" action="processAllVisits"/>
+        </p:menubar>
+        <br/>
+        <h:panelGrid columns="2">
+            Visit Date: <p:outputLabel value="#{visitDetail.visit.date}"/> <br/>
+
+            Diagnose: <p:outputLabel value="#{visitDetail.visit.symptoms}"/>
+
+            <br/><br/>
+            Additional Text:<br/>
+            <p:inputTextarea rows="3" cols="45" completeMethod="#{HPOController.autocompleteHPO}" queryDelay="50"
+                             minQueryLength="2" value="#{ visitDetail.visit.additionalText }"/>
+            <br/>
+            <h:commandButton value="Process Additional Text" action="processText">
+                <f:setPropertyActionListener value="#{visitDetail.visit}" target="#{HPOController.selectedVisit}"/>
+                <f:setPropertyActionListener value="#{visitDetail.visit.additionalText}"
+                                             target="#{HPOController.textToProcess}"/>
+            </h:commandButton>
+        </h:panelGrid>
+    </h:form>
+</h:body>
+</html>

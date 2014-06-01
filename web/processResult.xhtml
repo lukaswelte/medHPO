@@ -19,26 +19,33 @@
     <br/>
     Input:
     <h:outputText escape="false" id="inputText" value="#{HPOController.textToProcess}"/>
-    <br />
-    <br />
+    <br/>
+    <br/>
 
     Text:
     <h:outputText escape="false" id="outputText" value="#{HPOController.outputText}"/>
     <br/>
     <br/>
     HPO-Tags:
-    <p:dataTable var="tag" value="#{HPOController.outputHPOTags}">
-        <p:column headerText="HPO ID">
-            <h:outputText value="#{tag.tag}"/>
-        </p:column>
+    <h:form>
+        <p:dataTable id="tagTable" var="tag" value="#{HPOController.outputHPOTags}">
+            <p:column headerText="HPO ID">
+                <h:outputText value="#{tag.tag}"/>
+            </p:column>
 
-        <p:column headerText="Name">
-            <h:outputText value="#{tag.name}"/>
-        </p:column>
+            <p:column headerText="Name">
+                <h:outputText value="#{tag.name}"/>
+            </p:column>
 
-        <p:column headerText="Description">
-            <h:outputText value="#{tag.description}"/>
-        </p:column>
-    </p:dataTable>
+            <p:column headerText="Description">
+                <h:outputText value="#{tag.description}"/>
+            </p:column>
+
+            <p:column headerText="Actions">
+                <!--<h:commandButton value="Edit" action="#{HPOController.editTerm(tag)}" update="tagTable" /> -->
+                <h:commandButton value="Delete" action="#{HPOController.deleteTerm(tag)}" update="tagTable"/>
+            </p:column>
+        </p:dataTable>
+    </h:form>
 </h:body>
 </html>
