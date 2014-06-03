@@ -8,6 +8,10 @@
 <h:head>
     <title>MedHPO</title>
 </h:head>
+<f:metadata>
+    <f:viewParam name="id" value="#{visitDetail.visitID}" required="true"/>
+    <f:event type="preRenderView" listener="#{visitDetail.init}"/>
+</f:metadata>
 <h:body>
     <h:form>
         <p:menubar autoDisplay="false">
@@ -24,13 +28,31 @@
             <br/><br/>
             Additional Text:<br/>
             <p:inputTextarea rows="3" cols="45" completeMethod="#{HPOController.autocompleteHPO}" queryDelay="50"
-                             minQueryLength="2" value="#{ visitDetail.visit.additionalText }"/>
+                             minQueryLength="2" value="#{ visitDetail.additionalText }"/>
             <br/>
-            <h:commandButton value="Process Additional Text" action="processText">
-                <f:setPropertyActionListener value="#{visitDetail.visit}" target="#{HPOController.selectedVisit}"/>
-                <f:setPropertyActionListener value="#{visitDetail.visit.additionalText}"
-                                             target="#{HPOController.textToProcess}"/>
-            </h:commandButton>
+            <h:commandButton value="Process Additional Text" action="#{visitDetail.processText}"/>
+
+            HPO-Tags:
+            <h:form>
+                <p:dataTable id="tagTable" var="tag" value="#{visitDetail.outputHPOTags}">
+                    <p:column headerText="HPO ID">
+                        <h:outputText value="#{tag.tag}"/>
+                    </p:column>
+
+                    <p:column headerText="Name">
+                        <h:outputText value="#{tag.name}"/>
+                    </p:column>
+
+                    <p:column headerText="Description">
+                        <h:outputText value="#{tag.description}"/>
+                    </p:column>
+
+                    <p:column headerText="Actions">
+                        <!--<h:commandButton value="Edit" action="#{HPOController.editTerm(tag)}" update="tagTable" /> -->
+                        <h:commandButton value="Delete" action="#{HPOController.deleteTerm(tag)}" update="tagTable"/>
+                    </p:column>
+                </p:dataTable>
+            </h:form>
         </h:panelGrid>
     </h:form>
 </h:body>

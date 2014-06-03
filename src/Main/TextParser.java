@@ -15,6 +15,7 @@ import opennlp.tools.util.PlainTextByLineStream;
 import opennlp.tools.util.Span;
 
 import java.io.*;
+import java.util.ArrayList;
 import java.util.List;
 
 public class TextParser {
@@ -22,6 +23,12 @@ public class TextParser {
     private static POSModel mModel;
     private static POSTaggerME mTagger;
     private static ChunkerME mChunker;
+
+    private List<String> foundNames;
+    private String anonymizedString;
+    private int sentence_detection_and_tokenization_in_ms;
+    private int name_finding_in_ms;
+    private int chunking_in_ms;
 
     private static POSModel posModel() {
         if (mModel == null) {
@@ -53,13 +60,12 @@ public class TextParser {
         return mChunker;
     }
 
-    public static List<TermSearchCandidate> chunkAndReturnCandidates(String string) throws IOException {
+    public List<TermSearchCandidate> chunkAndReturnCandidates(String string) throws IOException {
         //Start Time Measurement
-        long start = System.nanoTime();
-        long last = start;
+        long last = System.nanoTime();
 
-        PerformanceMonitor perfMon = new PerformanceMonitor(System.err, "Sentence Detection");
-        perfMon.start();
+        PerformanceMonitor performanceMonitor = new PerformanceMonitor(System.err, "Sentence Detection");
+        performanceMonitor.start();
         // Sentence
         POSTaggerME tagger = TextParser.posTaggerME();
 
@@ -75,33 +81,28 @@ public class TextParser {
                     .tokenize(line);
             tags = tagger.tag(sentence);
 
-            //Debug only
-            /*POSSample sample = new POSSample(sentence, tags);
-            System.out.println(sample.toString()); */
-            //
-
-            perfMon.incrementCounter();
+            performanceMonitor.incrementCounter();
         }
-        perfMon.stopAndPrintFinalResult();
+        performanceMonitor.stopAndPrintFinalResult();
         // Print Measurement
         double elapsedTimeInSec = (System.nanoTime() - last) * 1.0e-9;
-        HPOController.sentence_detection_and_tokenization_in_ms = (int) (elapsedTimeInSec * 1000);
+        sentence_detection_and_tokenization_in_ms = (int) (elapsedTimeInSec * 1000);
         last = System.nanoTime();
 
 
-        perfMon = new PerformanceMonitor(System.err, "Anonymize Names");
-        perfMon.start();
+        performanceMonitor = new PerformanceMonitor(System.err, "Anonymize Names");
+        performanceMonitor.start();
         // Anonymize Names
         InputStream modelIn = new FileInputStream("en-ner-person.bin");
         TokenNameFinderModel nameFinderModel = new TokenNameFinderModel(modelIn);
         NameFinderME nameFinder = new NameFinderME(nameFinderModel);
         Span nameSpans[] = nameFinder.find(sentence);
-        HPOController.numberFoundNames = nameSpans.length;
-        System.out.println("Names");
+        foundNames = new ArrayList<>();
         for (Span s : nameSpans) {
             System.out.println(s.toString());
             for (int i = s.getStart(); i < s.getEnd(); i++) {
                 if (sentence != null) {
+                    foundNames.add(sentence[i]);
                     sentence[i] = "[patient]";
                 }
             }
@@ -113,32 +114,49 @@ public class TextParser {
             backToSentence.append(s);
             backToSentence.append(" ");
         }
-        HPOController.anonymizedString = backToSentence.toString();
-        System.out.println("Text after anonymization: " + HPOController.anonymizedString);
+        anonymizedString = backToSentence.toString();
         nameFinder.clearAdaptiveData();
 
-        perfMon.stopAndPrintFinalResult();
+        performanceMonitor.stopAndPrintFinalResult();
         elapsedTimeInSec = (System.nanoTime() - last) * 1.0e-9;
-        HPOController.name_finding_in_ms = (int) (elapsedTimeInSec * 1000);
+        name_finding_in_ms = (int) (elapsedTimeInSec * 1000);
         last = System.nanoTime();
 
 
-        perfMon = new PerformanceMonitor(System.err, "Chunking");
-        perfMon.start();
+        performanceMonitor = new PerformanceMonitor(System.err, "Chunking");
+        performanceMonitor.start();
 
         // chunker
         ChunkerME chunkerME = TextParser.chunkerME();
 
         System.out.println("Spans");
         Span[] spans = chunkerME.chunkAsSpans(sentence, tags);
-        for (Span s : spans)
-            System.out.println(s.toString());
 
-        perfMon.stopAndPrintFinalResult();
+        performanceMonitor.stopAndPrintFinalResult();
         elapsedTimeInSec = (System.nanoTime() - last) * 1.0e-9;
-        HPOController.chunking_in_ms = (int) (elapsedTimeInSec * 1000);
+        chunking_in_ms = (int) (elapsedTimeInSec * 1000);
         last = System.nanoTime();
 
         return TermSearchCandidate.termSearchCandidates(sentence, tags, spans);
+    }
+
+    public List<String> getFoundNames() {
+        return foundNames;
+    }
+
+    public String getAnonymizedString() {
+        return anonymizedString;
+    }
+
+    public int getSentence_detection_and_tokenization_in_ms() {
+        return sentence_detection_and_tokenization_in_ms;
+    }
+
+    public int getName_finding_in_ms() {
+        return name_finding_in_ms;
+    }
+
+    public int getChunking_in_ms() {
+        return chunking_in_ms;
     }
 }

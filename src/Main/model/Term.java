@@ -1,34 +1,48 @@
 package Main.model;
 
 import javax.sql.DataSource;
+import java.io.*;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
-public class Term {
+public class Term implements Serializable {
 
     private String name;
     private String tag;
-    private String id;
+    private int id;
     private String description;
+    private List<String> words;
 
-    private int startIndex;
-    private int endIndex;
-
-    public static String getJSONStringFromList(List<Term> list) {
-        StringBuilder stringBuilder = new StringBuilder("[");
-
-        for (Term t : list) {
-            stringBuilder.append(t.jsonDescription());
-            stringBuilder.append(",");
+    public static String getSerializedObject(Object object) {
+        String serializedObject = "";
+        try {
+            ByteArrayOutputStream bo = new ByteArrayOutputStream();
+            ObjectOutputStream so = new ObjectOutputStream(bo);
+            so.writeObject(object);
+            so.flush();
+            serializedObject = bo.toString();
+        } catch (Exception e) {
+            e.printStackTrace();
         }
-        stringBuilder.deleteCharAt(stringBuilder.length() - 1);
-        stringBuilder.append("]");
+        return serializedObject;
+    }
 
-        return stringBuilder.toString();
+    public static Object getObjectFromString(String serializedObject) {
+        Object obj = null;
+        try {
+            byte b[] = serializedObject.getBytes();
+            ByteArrayInputStream bi = new ByteArrayInputStream(b);
+            ObjectInputStream si = new ObjectInputStream(bi);
+            obj = si.readObject();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return obj;
     }
 
     public static List<Term> getTermsForCandidate(TermSearchCandidate candidate, DataSource dataSource) throws SQLException {
@@ -84,7 +98,8 @@ public class Term {
 
                 term.setName(resultSet.getString("name"));
                 term.setTag(resultSet.getString("acc"));
-                term.setId(resultSet.getString("id"));
+                term.setId(resultSet.getInt("id"));
+                term.setWords(Arrays.asList(words));
 
                 //store all data into a List
                 list.add(term);
@@ -149,73 +164,24 @@ public class Term {
         return list;
     }
 
-    /**
-     * Formats output highlighting terms. Example:
-     * 'The patient had large hands. Suffering from psychotic episodes the patient is just in sickbed.'
-     * Would be transformed into
-     * 'The patient had <em>large hands</em>. Suffering from <em>psychotic episodes</em> the patient is just in sickbed.'
-     *
-     * @param originalStr The input string
-     * @param terms       The term list
-     * @return Formatted String
-     */
-    public static String enhanceStringWithTerms(String originalStr, List<Term> terms, DataSource dataSource) {
-        StringBuffer originalString = new StringBuffer(originalStr);
-        //boolean found = true;
-        int beginIndex;
-        int endIndex;
+    public static List<Term> addDescriptionToTerms(List<Term> terms, DataSource dataSource) {
         try {
             Connection connection = dataSource.getConnection();
             PreparedStatement ps;
             ResultSet resultSet;
-            String definition;
-            String titleTag;
 
             for (Term currentTerm : terms) {
-                String currentTermName = currentTerm.name;
-                if (originalString.toString().toLowerCase().contains(currentTermName.toLowerCase())) {
-                    ps = connection.prepareStatement("select term_definition from hpo.term_definition where term_definition.term_id = '" + currentTerm.id + "'");
-                    resultSet = ps.executeQuery();
-                    definition = "";
-                    while (resultSet.next()) {
-                        definition += resultSet.getString("term_definition");
-                    }
-
-                    titleTag = "title='Name: " + currentTerm.name + "-br-" + currentTerm.tag;
-                    if (!(definition.equals(""))) {
-                        titleTag += "-br--br-Definition: " + definition + "'";
-                    }
-                    titleTag += "'";
-
-                    beginIndex = originalString.toString().toLowerCase().indexOf(currentTermName.toLowerCase());
-                    endIndex = beginIndex + currentTermName.length();
-                    currentTerm.startIndex = beginIndex;
-                    currentTerm.endIndex = endIndex;
-                    originalString = originalString.insert(endIndex, "</span>");
-                    originalString = originalString.insert(beginIndex, "<span " + titleTag + " style='text-decoration: underline;'>");
+                ps = connection.prepareStatement("select term_definition from hpo.term_definition where term_definition.term_id = '" + currentTerm.getId() + "'");
+                resultSet = ps.executeQuery();
+                while (resultSet.next()) {
+                    currentTerm.setDescription(resultSet.getString("term_definition"));
                 }
-            } // for
+            }
 
         } catch (SQLException e) {
             e.printStackTrace();
         }
-        return originalString.toString();
-    } // formatOutput
-
-    public int getStartIndex() {
-        return startIndex;
-    }
-
-    public void setStartIndex(int startIndex) {
-        this.startIndex = startIndex;
-    }
-
-    public int getEndIndex() {
-        return endIndex;
-    }
-
-    public void setEndIndex(int endIndex) {
-        this.endIndex = endIndex;
+        return terms;
     }
 
     public String getName() {
@@ -234,11 +200,11 @@ public class Term {
         this.tag = tag;
     }
 
-    public String getId() {
+    public int getId() {
         return id;
     }
 
-    public void setId(String id) {
+    public void setId(int id) {
         this.id = id;
     }
 
@@ -250,12 +216,19 @@ public class Term {
         this.description = description;
     }
 
+    public List<String> getWords() {
+        if (words == null) {
+            words = new ArrayList<>();
+        }
+        return words;
+    }
+
+    public void setWords(List<String> words) {
+        this.words = words;
+    }
+
     @Override
     public String toString() {
         return this.getName();
-    }
-
-    public String jsonDescription() {
-        return "{" + "start:" + this.getStartIndex() + ",end:" + this.getEndIndex() + ",id:" + this.getId() + "}";
     }
 }
