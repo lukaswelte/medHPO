@@ -6,13 +6,13 @@ import org.primefaces.model.SelectableDataModel;
 import javax.annotation.PostConstruct;
 import javax.annotation.Resource;
 import javax.faces.bean.ManagedBean;
-import javax.faces.bean.SessionScoped;
+import javax.faces.bean.ViewScoped;
 import javax.faces.model.ListDataModel;
 import javax.sql.DataSource;
 import java.util.List;
 
 @ManagedBean(name = "tableBean")
-@SessionScoped
+@ViewScoped
 public class TableBean {
 
     @Resource(lookup = "jdbc/klinik")

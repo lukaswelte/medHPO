@@ -9,6 +9,7 @@ import javax.faces.bean.ManagedBean;
 import javax.faces.bean.RequestScoped;
 import javax.sql.DataSource;
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.List;
 
 @ManagedBean(name = "visitDetail")
@@ -59,6 +60,11 @@ public class VisitDetail implements Serializable {
     }
 
     public List<Term> getHpoTerms() {
-        return hpoInfo.getHpoMatches();
+
+        if (hpoInfo != null && hpoInfo.getHpoMatches() != null) {
+            return hpoInfo.getHpoMatches();
+        } else {
+            return new ArrayList<>();
+        }
     }
 }

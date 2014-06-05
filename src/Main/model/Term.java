@@ -45,6 +45,25 @@ public class Term implements Serializable {
         return obj;
     }
 
+    public static Term getTermWithId(int id, DataSource dataSource) {
+        Term result = null;
+        try {
+            PreparedStatement preparedStatement = dataSource.getConnection().prepareStatement("SELECT hpo.term.id, hpo.term.name, hpo.term.acc, hpo.term_definition.term_definition FROM hpo.term LEFT JOIN hpo.term_definition ON hpo.term.id = hpo.term_definition.term_id  WHERE hpo.term.id = ?");
+            preparedStatement.setInt(1, id);
+            ResultSet resultSet = preparedStatement.executeQuery();
+            while (resultSet.next()) {
+                result = new Term();
+                result.setId(resultSet.getInt("id"));
+                result.setDescription(resultSet.getString("term_definition"));
+                result.setTag(resultSet.getString("acc"));
+                result.setName(resultSet.getString("name"));
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return result;
+    }
+
     public static List<Term> getTermsForCandidate(TermSearchCandidate candidate, DataSource dataSource) throws SQLException {
         if (dataSource == null)
             throw new SQLException("Can't get data source");
@@ -165,23 +184,22 @@ public class Term implements Serializable {
     }
 
     public static List<Term> addDescriptionToTerms(List<Term> terms, DataSource dataSource) {
+        for (Term term : terms) {
+            term.fetchDescription(dataSource);
+        }
+        return terms;
+    }
+
+    public void fetchDescription(DataSource dataSource) {
         try {
-            Connection connection = dataSource.getConnection();
-            PreparedStatement ps;
-            ResultSet resultSet;
-
-            for (Term currentTerm : terms) {
-                ps = connection.prepareStatement("select term_definition from hpo.term_definition where term_definition.term_id = '" + currentTerm.getId() + "'");
-                resultSet = ps.executeQuery();
-                while (resultSet.next()) {
-                    currentTerm.setDescription(resultSet.getString("term_definition"));
-                }
+            PreparedStatement ps = dataSource.getConnection().prepareStatement("select term_definition from hpo.term_definition where term_definition.term_id = '" + this.getId() + "'");
+            ResultSet resultSet = ps.executeQuery();
+            while (resultSet.next()) {
+                this.setDescription(resultSet.getString("term_definition"));
             }
-
         } catch (SQLException e) {
             e.printStackTrace();
         }
-        return terms;
     }
 
     public String getName() {

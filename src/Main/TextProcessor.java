@@ -65,6 +65,6 @@ public class TextProcessor {
         hpoInfo.save();
 
         visit.setAdditionalText(textParser.getAnonymizedString());
-        //TODO: Update visit in database
+        visit.saveToDatabase();
     }
 }

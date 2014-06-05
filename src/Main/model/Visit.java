@@ -1,6 +1,9 @@
 package Main.model;
 
+import Main.HPOController;
+
 import javax.sql.DataSource;
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -41,7 +44,8 @@ public class Visit {
     public static List<Visit> getAllVisits(DataSource klinikDataSource) {
         List<Visit> visits = null;
         try {
-            PreparedStatement ps = klinikDataSource.getConnection().prepareStatement("SELECT id,  patient_id, date, symptoms, additional_text FROM visit");
+            Connection connection = klinikDataSource.getConnection();
+            PreparedStatement ps = connection.prepareStatement("SELECT id,  patient_id, date, symptoms, additional_text FROM visit");
             ResultSet resultSet = ps.executeQuery();
 
             visits = new ArrayList<>();
@@ -49,10 +53,25 @@ public class Visit {
             while (resultSet.next()) {
                 visits.add(new Visit(resultSet.getInt(1), resultSet.getInt(2), resultSet.getString(3), resultSet.getString(4), resultSet.getString(5)));
             }
+
+            connection.close();
         } catch (SQLException e) {
             e.printStackTrace();
         }
         return visits;
+    }
+
+    public void saveToDatabase() {
+        try {
+            Connection connection = HPOController.getKlinikDataSource().getConnection();
+            PreparedStatement preparedStatement = connection.prepareStatement("UPDATE klinik.Visit SET additional_text=? WHERE klinik.Visit.id = ?");
+            preparedStatement.setString(1, getAdditionalText());
+            preparedStatement.setInt(2, getId());
+            preparedStatement.executeUpdate();
+            connection.close();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
     }
 
     public int getId() {

@@ -2,7 +2,6 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
         "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml"
-      xmlns:f="http://java.sun.com/jsf/core"
       xmlns:h="http://java.sun.com/jsf/html"
       xmlns:p="http://primefaces.org/ui">
 <h:head>
@@ -14,23 +13,12 @@
         <p:menubar autoDisplay="false">
             <p:menuitem value="Home" url="/index.xhtml" icon="ui-icon-home"/>
             <p:menuitem value="Select Visit" url="/visitList.xhtml" icon="ui-icon-contact"/>
-            <p:menuitem value="Process All Visits" action="processAllVisits"/>
+            <p:menuitem value="Process All Visits" action="/processAllVisits.xhtml"/>
         </p:menubar>
 
-        <h:panelGrid columns="2">
-            Patient visit:
-            <h:selectOneMenu value="#{HPOController.selectedVisit}" style="width: 150px; height:120px;"
-                             defaultLabel="Select a visit.." onchange="submit()"
-                             valueChangeListener="#{HPOController.selectedVisitChanged}">
-                <f:selectItems value="#{HPOController.visits}"/>
-            </h:selectOneMenu>
-
-            Additional Text:
-            <p:inputTextarea id="additionalinfo" rows="3" cols="45" completeMethod="#{HPOController.autocompleteHPO}"
-                             queryDelay="50" minQueryLength="2" value="#{HPOController.selectedVisit}"/>
-            <br/>
-        </h:panelGrid>
-        <h:commandButton value="Submit" action="#{HPOController.processSelectedVisit}"/>
+        <h1>
+            Welcome to the MedHPO Tagger
+        </h1>
     </h:form>
 </h:body>
 </html>
