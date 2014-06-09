@@ -50,7 +50,13 @@ public class VisitDetail implements Serializable {
         Visit visit = Visit.getVisitWithId(getVisitID(), klinikDataSource);
         setAdditionalText(visit.getAdditionalText());
         hpoInfo = HPOInfo.getLastInfoForVisitWithId(getVisitID(), klinikDataSource);
-        termDataModel = new TermDataModel(hpoInfo.getHpoMatches());
+        if (hpoInfo != null) {
+            List<Term> hpoMatches = hpoInfo.getHpoMatches();
+            if (hpoMatches == null) {
+                hpoMatches = new ArrayList<>();
+            }
+            termDataModel = new TermDataModel(hpoMatches);
+        }
     }
 
     public Visit getVisit() {
@@ -69,7 +75,7 @@ public class VisitDetail implements Serializable {
         return termDataModel;
     }
 
-    public String deleteTermWithId(int termID) {
+    public String deleteTermWithId(Integer termID) {
         System.out.println("hallo lukas das ist der term:");
         System.out.println("Term: " + termID);
         hpoInfo.removeMatchedTermWithId(termID);
