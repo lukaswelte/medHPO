@@ -39,7 +39,8 @@ public class HPOInfo {
             while (resultSet.next()) {
                 int hpoInfoId = resultSet.getInt("id");
                 String hpoMultiMatches = resultSet.getString("hpo_multiple_matches");
-                List<List<Term>> hpoMultipleMatches = (List<List<Term>>) Term.getObjectFromString(hpoMultiMatches);
+                //  List<List<Term>> hpoMultipleMatches = (List<List<Term>>) Term.getObjectFromString(hpoMultiMatches);
+                List<List<Term>> hpoMultipleMatches = new ArrayList<>();
                 int sentenceDetection = resultSet.getInt("sentence_detection_and_tokenization_in_ms");
                 int nameFinding = resultSet.getInt("name_finding_in_ms");
                 int chunking = resultSet.getInt("chunking_in_ms");
@@ -211,6 +212,18 @@ public class HPOInfo {
             ps.setInt(5, getChunking_in_ms());
             ps.setInt(6, getId());
             ps.executeUpdate();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void removeMatchedTermWithId(int termID) {
+        try {
+            Connection connection = HPOController.getKlinikDataSource().getConnection();
+            PreparedStatement preparedStatement = connection.prepareStatement("DELETE FROM found_terms WHERE info_id = ? AND term_id = ?");
+            preparedStatement.setInt(1, getId());
+            preparedStatement.setInt(2, termID);
+            preparedStatement.executeUpdate();
         } catch (SQLException e) {
             e.printStackTrace();
         }

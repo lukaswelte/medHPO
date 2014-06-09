@@ -27,14 +27,14 @@
 
             <br/><br/>
             Additional Text:<br/>
-            <p:inputTextarea rows="3" cols="45" completeMethod="#{HPOController.autocompleteHPO}" queryDelay="50"
+            <p:inputTextarea rows="3" cols="45" completeMethod="#{visitDetail.autocompleteHPO}" queryDelay="50"
                              minQueryLength="2" value="#{ visitDetail.additionalText }"/>
             <br/>
             <h:commandButton value="Process Additional Text" action="#{visitDetail.processText}"/>
 
             HPO-Tags:
             <h:form>
-                <p:dataTable id="tagTable" var="tag" value="#{visitDetail.getHpoTerms()}">
+                <p:dataTable id="tagTable" var="tag" value="#{visitDetail.termDataModel}">
                     <p:column headerText="HPO ID">
                         <h:outputText value="#{tag.tag}"/>
                     </p:column>
@@ -48,10 +48,22 @@
                     </p:column>
 
                     <p:column headerText="Actions">
-
+                        <h:commandButton value="Remove" action="#{visitDetail.deleteTermWithId(tag.id)}"/>
                     </p:column>
                 </p:dataTable>
             </h:form>
+
+            <br/>
+            Timings:
+            <p:dataTable id="hpoTimeTable" var="time" value="#{visitDetail.termTimes}">
+                <p:column headerText="Type">
+                    <h:outputText value="#{time.type}"/>
+                </p:column>
+
+                <p:column headerText="Value (in ms)">
+                    <h:outputText value="#{time.value}"/>
+                </p:column>
+            </p:dataTable>
         </h:panelGrid>
     </h:form>
 </h:body>
