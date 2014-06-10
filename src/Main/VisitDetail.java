@@ -7,7 +7,7 @@ import org.primefaces.model.SelectableDataModel;
 
 import javax.annotation.Resource;
 import javax.faces.bean.ManagedBean;
-import javax.faces.bean.RequestScoped;
+import javax.faces.bean.ViewScoped;
 import javax.faces.model.ListDataModel;
 import javax.sql.DataSource;
 import java.io.Serializable;
@@ -16,7 +16,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @ManagedBean(name = "visitDetail")
-@RequestScoped
+@ViewScoped
 public class VisitDetail implements Serializable {
     @Resource(lookup = "jdbc/klinik")
     private DataSource klinikDataSource;
@@ -76,8 +76,6 @@ public class VisitDetail implements Serializable {
     }
 
     public String deleteTermWithId(Integer termID) {
-        System.out.println("hallo lukas das ist der term:");
-        System.out.println("Term: " + termID);
         hpoInfo.removeMatchedTermWithId(termID);
         return "/visitDetail.xhtml?faces-redirect=true&id=" + getVisitID();
     }

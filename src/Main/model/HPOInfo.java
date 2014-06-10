@@ -77,6 +77,7 @@ public class HPOInfo {
 
                 Visit visit = Visit.getVisitWithId(visitID, klinikDataSource);
                 result = new HPOInfo(visit, terms, hpoMultipleMatches, sentenceDetection, nameFinding, chunking, foundNames);
+                result.id = hpoInfoId;
             }
 
             klinikDataSourceConnection.close();
