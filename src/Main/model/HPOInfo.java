@@ -202,6 +202,31 @@ public class HPOInfo {
         }
     }
 
+    public void updateTermWords(Term term) {
+        PreparedStatement ps;
+        try {
+            ps = klinikDataSource.getConnection().prepareStatement("SELECT id FROM found_terms WHERE info_id=? AND term_id=?");
+            ps.setInt(1, getId());
+            ps.setInt(2, term.getId());
+            ResultSet resultSet = ps.executeQuery();
+            while (resultSet.next()) {
+                ps = klinikDataSource.getConnection().prepareStatement("DELETE FROM found_term_word WHERE found_term = ?");
+                int foundTermID = resultSet.getInt("id");
+                ps.setInt(1, foundTermID);
+                ps.executeUpdate();
+
+                ps = klinikDataSource.getConnection().prepareStatement("INSERT INTO found_term_word (found_term, word) VALUES (?,?)");
+                ps.setInt(1, foundTermID);
+                for (String word : term.getWords()) {
+                    ps.setString(2, word);
+                    ps.executeUpdate();
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
     private void updateInfo() {
         PreparedStatement ps;
         try {

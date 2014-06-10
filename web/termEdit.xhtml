@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+        "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:h="http://xmlns.jcp.org/jsf/html"
+      xmlns:p="http://primefaces.org/ui"
+      xmlns:f="http://xmlns.jcp.org/jsf/core">
+<h:head>
+    <title>MedHPO - Edit Term</title>
+</h:head>
+<f:metadata>
+    <f:viewParam name="term" value="#{termEdit.termID}" required="true"/>
+    <f:viewParam name="visit" value="#{termEdit.visitID}" required="true"/>
+    <f:event type="preRenderView" listener="#{termEdit.init}"/>
+</f:metadata>
+<h:body>
+    <h:form id="form">
+        <p:menubar autoDisplay="false">
+            <p:menuitem value="Home" url="/index.xhtml" icon="ui-icon-home"/>
+            <p:menuitem value="Select Visit" url="/visitList.xhtml" icon="ui-icon-contact"/>
+            <p:menuitem value="Process All Visits" action="/processAllVisits.xhtml"/>
+        </p:menubar>
+        <h:panelGrid columns="2">
+            Selected Words:
+            <p:pickList id="pickList" value="#{termEdit.words}" var="words" itemLabel="#{words}" itemValue="#{words}"/>
+
+            <h:commandButton value="Save" action="#{termEdit.save}"/>
+            <h:commandButton value="Cancel" action="#{termEdit.cancel}"/>
+        </h:panelGrid>
+    </h:form>
+</h:body>
+</html>

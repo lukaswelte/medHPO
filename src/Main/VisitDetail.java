@@ -80,6 +80,10 @@ public class VisitDetail implements Serializable {
         return "/visitDetail.xhtml?faces-redirect=true&id=" + getVisitID();
     }
 
+    public String editTermWithId(Integer termID) {
+        return "/termEdit.xhtml?faces-redirect=true&visit=" + getVisitID() + "&term=" + termID;
+    }
+
     public List<String> autocompleteHPO(String query) {
         List<String> results = new ArrayList<>();
 
