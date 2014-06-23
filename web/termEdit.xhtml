@@ -22,9 +22,7 @@
         </p:menubar>
         <h:panelGrid columns="2">
             Term:
-            <p:autoComplete queryDelay="500" minQueryLength="2" forceSelection="true" value="#{termEdit.selectedTerm}"
-                            converter="termConverter" completeMethod="#{termEdit.completeTerms}" var="term"
-                            itemLabel="#{term.name}" itemValue="#{term}"/>
+            <h:outputText value="#{termEdit.selectedTerm.name}"/>
             Selected Words:
             <p:pickList id="pickList" value="#{termEdit.words}" var="words" itemLabel="#{words}" itemValue="#{words}"/>
 
