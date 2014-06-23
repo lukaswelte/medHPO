@@ -6,12 +6,12 @@
       xmlns:p="http://primefaces.org/ui"
       xmlns:f="http://xmlns.jcp.org/jsf/core">
 <h:head>
-    <title>MedHPO - Edit Term</title>
+    <title>MedHPO - New Term</title>
 </h:head>
 <f:metadata>
-    <f:viewParam name="term" value="#{termEdit.termID}" required="true"/>
-    <f:viewParam name="visit" value="#{termEdit.visitID}" required="true"/>
-    <f:event type="preRenderView" listener="#{termEdit.init}"/>
+    <f:viewParam name="term" value="#{termNew.termID}" required="no"/>
+    <f:viewParam name="visit" value="#{termNew.visitID}" required="true"/>
+    <f:event type="preRenderView" listener="#{termNew.init}"/>
 </f:metadata>
 <h:body>
     <h:form id="form">
@@ -22,14 +22,15 @@
         </p:menubar>
         <h:panelGrid columns="2">
             Term:
-            <p:autoComplete queryDelay="500" minQueryLength="2" forceSelection="true" value="#{termEdit.selectedTerm}"
-                            converter="termConverter" completeMethod="#{termEdit.completeTerms}" var="term"
-                            itemLabel="#{term.name}" itemValue="#{term}"/>
+            <h:inputText value="#{termNew.termID}"/>
             Selected Words:
-            <p:pickList id="pickList" value="#{termEdit.words}" var="words" itemLabel="#{words}" itemValue="#{words}"/>
+            <p:pickList id="pickList" value="#{termNew.words}" var="words" itemLabel="#{words}" itemValue="#{words}"/>
 
-            <h:commandButton value="Save" action="#{termEdit.save}"/>
-            <h:commandButton value="Cancel" action="#{termEdit.cancel}"/>
+            <h:commandButton id="saveButton" value="Save"
+                             binding="#{termNew.saveButton}"
+                             action="#{termNew.save}"/>
+            <h:message for="saveButton"/>
+            <h:commandButton value="Cancel" action="#{termNew.cancel}"/>
         </h:panelGrid>
     </h:form>
 </h:body>

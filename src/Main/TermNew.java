@@ -4,25 +4,34 @@ import Main.model.HPOInfo;
 import Main.model.Term;
 import org.primefaces.model.DualListModel;
 
+import javax.faces.application.FacesMessage;
 import javax.faces.bean.ManagedBean;
 import javax.faces.bean.ViewScoped;
+import javax.faces.component.UIComponent;
 import javax.faces.context.FacesContext;
 import javax.sql.DataSource;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-@ManagedBean(name = "termEdit")
+@ManagedBean(name = "termNew")
 @ViewScoped
-public class TermEdit {
+public class TermNew {
     private HPOInfo hpoInfo;
     private int visitID;
     private DataSource hpoDataSource;
-    private Term termToEdit;
     private DualListModel<String> words;
     private int termID;
-    private Term selectedTerm;
+
+    private UIComponent saveButton;
+
+    public UIComponent getSaveButton() {
+        return saveButton;
+    }
+
+    public void setSaveButton(UIComponent saveButton) {
+        this.saveButton = saveButton;
+    }
 
     public int getTermID() {
         return termID;
@@ -49,19 +58,9 @@ public class TermEdit {
         hpoInfo = HPOInfo.getLastInfoForVisitWithId(visitID, klinikDataSource);
         if (hpoInfo != null) {
             List<Term> hpoMatches = hpoInfo.getHpoMatches();
-            if (hpoMatches == null) {
-                hpoMatches = new ArrayList<>();
-            }
-            for (Term term : hpoMatches) {
-                if (term.getId() == termID) {
-                    termToEdit = term;
-                    selectedTerm = termToEdit;
-                    break;
-                }
-            }
 
             String[] allWords = hpoInfo.getVisit().getAdditionalText().split("\\s+");
-            List<String> selectedWords = termToEdit.getWords();
+            List<String> selectedWords = new ArrayList<>();
             List<String> nonTermWords = new ArrayList<>();
             for (String word : allWords) {
                 if (!selectedWords.contains(word) && word.length() > 1 && !word.contains("patient")) {
@@ -84,39 +83,20 @@ public class TermEdit {
     }
 
     public String save() {
-        termToEdit.setWords(words.getTarget());
-        hpoInfo.updateTermWords(termToEdit);
+        Term term = Term.getTermWithId(getTermID(), hpoDataSource);
+        if (term == null) {
+            // invalid
+            FacesMessage message = new FacesMessage("Invalid HPO Term ID");
+            FacesContext context = FacesContext.getCurrentInstance();
+            context.addMessage(saveButton.getClientId(context), message);
+            return "#";
+        }
+        term.setWords(words.getTarget());
+        hpoInfo.saveTerm(term);
         return "/visitDetail.xhtml?faces-redirect=true&id=" + getVisitID();
     }
 
     public String cancel() {
         return "/visitDetail.xhtml?faces-redirect=true&id=" + getVisitID();
-    }
-
-    public Term getSelectedTerm() {
-        return selectedTerm;
-    }
-
-    public void setSelectedTerm(Term selectedTerm) {
-        this.selectedTerm = selectedTerm;
-    }
-
-    public List<Term> completeTerms(String query) {
-        List<Term> results = new ArrayList<>();
-
-        List<Term> terms = null;
-        try {
-            terms = Term.getTermStartingWithText(query, hpoDataSource);
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-
-        if (terms == null) return results;
-
-        for (Term term : terms) {
-            results.add(term);
-        }
-
-        return results;
     }
 }

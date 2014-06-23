@@ -1,6 +1,7 @@
 package Main.model;
 
 import Main.HPOController;
+import Main.helper.DatabaseCleanup;
 
 import javax.sql.DataSource;
 import java.sql.*;
@@ -31,11 +32,14 @@ public class HPOInfo {
 
     public static HPOInfo getLastInfoForVisitWithId(int visitID, DataSource klinikDataSource) {
         HPOInfo result = null;
+        PreparedStatement preparedStatement = null;
+        Connection klinikDataSourceConnection = null;
+        ResultSet resultSet = null;
         try {
-            Connection klinikDataSourceConnection = klinikDataSource.getConnection();
-            PreparedStatement preparedStatement = klinikDataSourceConnection.prepareStatement("SELECT * FROM klinik.HPOInfo WHERE visit_id = ? AND id IN (SELECT MAX(id) FROM klinik.HPOInfo)");
+            klinikDataSourceConnection = klinikDataSource.getConnection();
+            preparedStatement = klinikDataSourceConnection.prepareStatement("SELECT * FROM klinik.HPOInfo WHERE visit_id = ? AND id IN (SELECT MAX(id) FROM klinik.HPOInfo)");
             preparedStatement.setInt(1, visitID);
-            ResultSet resultSet = preparedStatement.executeQuery();
+            resultSet = preparedStatement.executeQuery();
             while (resultSet.next()) {
                 int hpoInfoId = resultSet.getInt("id");
                 String hpoMultiMatches = resultSet.getString("hpo_multiple_matches");
@@ -79,10 +83,10 @@ public class HPOInfo {
                 result = new HPOInfo(visit, terms, hpoMultipleMatches, sentenceDetection, nameFinding, chunking, foundNames);
                 result.id = hpoInfoId;
             }
-
-            klinikDataSourceConnection.close();
         } catch (SQLException e) {
             e.printStackTrace();
+        } finally {
+            DatabaseCleanup.closeAll(resultSet, preparedStatement, klinikDataSourceConnection);
         }
         return result;
     }
@@ -136,9 +140,11 @@ public class HPOInfo {
     }
 
     private void insertInfo() {
-        PreparedStatement ps;
+        PreparedStatement ps = null;
+        Connection connection = null;
+        ResultSet resultSet = null;
         try {
-            Connection connection = klinikDataSource.getConnection();
+            connection = klinikDataSource.getConnection();
             ps = connection.prepareStatement("INSERT INTO HPOInfo " +
                     "(visit_id,hpo_multiple_matches,sentence_detection_and_tokenization_in_ms,name_finding_in_ms,chunking_in_ms)" +
                     " VALUES (?,?,?,?,?)", Statement.RETURN_GENERATED_KEYS);
@@ -152,9 +158,9 @@ public class HPOInfo {
                 throw new SQLException("Creating info failed, no rows affected.");
             }
 
-            ResultSet generatedKeys = ps.getGeneratedKeys();
-            if (generatedKeys.next()) {
-                this.id = generatedKeys.getInt(1);
+            resultSet = ps.getGeneratedKeys();
+            if (resultSet.next()) {
+                this.id = resultSet.getInt(1);
             } else {
                 throw new SQLException("Creating info failed, no generated key obtained.");
             }
@@ -176,9 +182,9 @@ public class HPOInfo {
                     throw new SQLException("Creating info failed, no rows affected.");
                 }
 
-                generatedKeys = ps.getGeneratedKeys();
-                if (generatedKeys.next()) {
-                    int foundTermId = generatedKeys.getInt(1);
+                resultSet = ps.getGeneratedKeys();
+                if (resultSet.next()) {
+                    int foundTermId = resultSet.getInt(1);
                     for (String word : term.getWords()) {
                         statement.setInt(1, foundTermId);
                         statement.setString(2, word);
@@ -195,27 +201,30 @@ public class HPOInfo {
                 nameStatement.setString(2, name);
                 nameStatement.executeUpdate();
             }
-
-            connection.close();
         } catch (SQLException e) {
             e.printStackTrace();
+        } finally {
+            DatabaseCleanup.closeAll(resultSet, ps, connection);
         }
     }
 
     public void updateTermWords(Term term) {
-        PreparedStatement ps;
+        PreparedStatement ps = null;
+        Connection connection = null;
+        ResultSet resultSet = null;
         try {
-            ps = klinikDataSource.getConnection().prepareStatement("SELECT id FROM found_terms WHERE info_id=? AND term_id=?");
+            connection = klinikDataSource.getConnection();
+            ps = connection.prepareStatement("SELECT id FROM found_terms WHERE info_id=? AND term_id=?");
             ps.setInt(1, getId());
             ps.setInt(2, term.getId());
-            ResultSet resultSet = ps.executeQuery();
+            resultSet = ps.executeQuery();
             while (resultSet.next()) {
-                ps = klinikDataSource.getConnection().prepareStatement("DELETE FROM found_term_word WHERE found_term = ?");
+                ps = connection.prepareStatement("DELETE FROM found_term_word WHERE found_term = ?");
                 int foundTermID = resultSet.getInt("id");
                 ps.setInt(1, foundTermID);
                 ps.executeUpdate();
 
-                ps = klinikDataSource.getConnection().prepareStatement("INSERT INTO found_term_word (found_term, word) VALUES (?,?)");
+                ps = connection.prepareStatement("INSERT INTO found_term_word (found_term, word) VALUES (?,?)");
                 ps.setInt(1, foundTermID);
                 for (String word : term.getWords()) {
                     ps.setString(2, word);
@@ -224,13 +233,17 @@ public class HPOInfo {
             }
         } catch (SQLException e) {
             e.printStackTrace();
+        } finally {
+            DatabaseCleanup.closeAll(resultSet, ps, connection);
         }
     }
 
     private void updateInfo() {
-        PreparedStatement ps;
+        Connection connection = null;
+        PreparedStatement ps = null;
         try {
-            ps = klinikDataSource.getConnection().prepareStatement("UPDATE HPOInfo SET visit_id = ?, hpo_multiple_matches = ?, sentence_detection_and_tokenization_in_ms = ?, name_finding_in_ms = ?, chunking_in_ms = ? WHERE id = ?");
+            connection = klinikDataSource.getConnection();
+            ps = connection.prepareStatement("UPDATE HPOInfo SET visit_id = ?, hpo_multiple_matches = ?, sentence_detection_and_tokenization_in_ms = ?, name_finding_in_ms = ?, chunking_in_ms = ? WHERE id = ?");
             ps.setInt(1, this.getVisit().getId());
             ps.setString(2, Term.getSerializedObject(this.getHpoMultipleMatches()));
             ps.setInt(3, getSentence_detection_and_tokenization_in_ms());
@@ -240,18 +253,64 @@ public class HPOInfo {
             ps.executeUpdate();
         } catch (SQLException e) {
             e.printStackTrace();
+        } finally {
+            DatabaseCleanup.closeAll(null, ps, connection);
         }
     }
 
     public void removeMatchedTermWithId(int termID) {
+        PreparedStatement preparedStatement = null;
+        Connection connection = null;
         try {
-            Connection connection = HPOController.getKlinikDataSource().getConnection();
-            PreparedStatement preparedStatement = connection.prepareStatement("DELETE FROM found_terms WHERE info_id = ? AND term_id = ?");
+            connection = HPOController.getKlinikDataSource().getConnection();
+            preparedStatement = connection.prepareStatement("DELETE FROM found_terms WHERE info_id = ? AND term_id = ?");
             preparedStatement.setInt(1, getId());
             preparedStatement.setInt(2, termID);
             preparedStatement.executeUpdate();
         } catch (SQLException e) {
             e.printStackTrace();
+        } finally {
+            DatabaseCleanup.closeAll(null, preparedStatement, connection);
+        }
+    }
+
+    public void saveTerm(Term term) {
+        Connection connection = null;
+        ResultSet resultSet = null;
+        PreparedStatement ps = null;
+        PreparedStatement statement = null;
+        try {
+            connection = klinikDataSource.getConnection();
+            ps = connection.prepareStatement("INSERT INTO found_terms " +
+                    "(info_id, term_id)" +
+                    " VALUES (?,?)", Statement.RETURN_GENERATED_KEYS);
+            statement = connection.prepareStatement("INSERT INTO found_term_word " +
+                    "(found_term, word)" +
+                    " VALUES (?,?)");
+            ps.setInt(1, getId());
+            ps.setInt(2, term.getId());
+            int affectedRows = ps.executeUpdate();
+            if (affectedRows == 0) {
+                throw new SQLException("Creating info failed, no rows affected.");
+            }
+
+            resultSet = ps.getGeneratedKeys();
+            if (resultSet.next()) {
+                int foundTermId = resultSet.getInt(1);
+                for (String word : term.getWords()) {
+                    statement.setInt(1, foundTermId);
+                    statement.setString(2, word);
+                    statement.executeUpdate();
+                }
+
+            } else {
+                throw new SQLException("Creating info failed, no generated key obtained.");
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        } finally {
+            DatabaseCleanup.closeAll(null, ps, null);
+            DatabaseCleanup.closeAll(resultSet, statement, connection);
         }
     }
 }

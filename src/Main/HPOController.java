@@ -10,25 +10,33 @@ import java.io.Serializable;
 @ManagedBean(name = "HPOController")
 @ApplicationScoped
 public class HPOController implements Serializable {
+    private static DataSource mHpoDataSource;
+    private static DataSource mKlinikDataSource;
 
     public static DataSource getHpoDataSource() {
-        DataSource hpoDataSource = null;
-        try {
-            hpoDataSource = (DataSource) new InitialContext().lookup("jdbc/hpo");
-        } catch (NamingException e) {
-            e.printStackTrace();
+        if (mHpoDataSource == null) {
+            DataSource hpoDataSource = null;
+            try {
+                hpoDataSource = (DataSource) new InitialContext().lookup("jdbc/hpo");
+            } catch (NamingException e) {
+                e.printStackTrace();
+            }
+            mHpoDataSource = hpoDataSource;
         }
-        return hpoDataSource;
+        return mHpoDataSource;
     }
 
     public static DataSource getKlinikDataSource() {
-        DataSource dataSource = null;
-        try {
-            dataSource = (DataSource) new InitialContext().lookup("jdbc/klinik");
-        } catch (NamingException e) {
-            e.printStackTrace();
+        if (mKlinikDataSource == null) {
+            DataSource dataSource = null;
+            try {
+                dataSource = (DataSource) new InitialContext().lookup("jdbc/klinik");
+            } catch (NamingException e) {
+                e.printStackTrace();
+            }
+            mKlinikDataSource = dataSource;
         }
-        return dataSource;
+        return mKlinikDataSource;
     }
 
     public String getProcessAllVisits() {

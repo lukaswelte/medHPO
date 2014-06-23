@@ -1,5 +1,7 @@
 package Main.model;
 
+import Main.helper.DatabaseCleanup;
+
 import javax.sql.DataSource;
 import java.io.*;
 import java.sql.Connection;
@@ -47,10 +49,14 @@ public class Term implements Serializable {
 
     public static Term getTermWithId(int id, DataSource dataSource) {
         Term result = null;
+        PreparedStatement preparedStatement = null;
+        ResultSet resultSet = null;
+        Connection connection = null;
         try {
-            PreparedStatement preparedStatement = dataSource.getConnection().prepareStatement("SELECT hpo.term.id, hpo.term.name, hpo.term.acc, hpo.term_definition.term_definition FROM hpo.term LEFT JOIN hpo.term_definition ON hpo.term.id = hpo.term_definition.term_id  WHERE hpo.term.id = ?");
+            connection = dataSource.getConnection();
+            preparedStatement = connection.prepareStatement("SELECT hpo.term.id, hpo.term.name, hpo.term.acc, hpo.term_definition.term_definition FROM hpo.term LEFT JOIN hpo.term_definition ON hpo.term.id = hpo.term_definition.term_id  WHERE hpo.term.id = ?");
             preparedStatement.setInt(1, id);
-            ResultSet resultSet = preparedStatement.executeQuery();
+            resultSet = preparedStatement.executeQuery();
             while (resultSet.next()) {
                 result = new Term();
                 result.setId(resultSet.getInt("id"));
@@ -60,6 +66,8 @@ public class Term implements Serializable {
             }
         } catch (SQLException e) {
             e.printStackTrace();
+        } finally {
+            DatabaseCleanup.closeAll(resultSet, preparedStatement, connection);
         }
         return result;
     }
@@ -76,6 +84,8 @@ public class Term implements Serializable {
 
         List<Term> result = null;
         List<String[]> candidateSearchStrings = candidate.getSearchStrings();
+        PreparedStatement ps = null;
+        ResultSet resultSet = null;
         for (String[] words : candidateSearchStrings) {
 
             //Build search values
@@ -88,10 +98,10 @@ public class Term implements Serializable {
 
 
             //Check for too much data
-            PreparedStatement ps = con.prepareStatement("SELECT DISTINCT count(*) FROM term LEFT JOIN term_synonym ON term.id = term_synonym.term_id WHERE term.name LIKE ? OR term_synonym.term_synonym LIKE ?");
+            ps = con.prepareStatement("SELECT DISTINCT count(*) FROM term LEFT JOIN term_synonym ON term.id = term_synonym.term_id WHERE term.name LIKE ? OR term_synonym.term_synonym LIKE ?");
             ps.setString(1, bufferedString);
             ps.setString(2, bufferedString);
-            ResultSet resultSet = ps.executeQuery();
+            resultSet = ps.executeQuery();
             if (resultSet.next()) {
                 int numberOfRows = resultSet.getInt(1);
                 if (numberOfRows > 10) continue;
@@ -131,7 +141,7 @@ public class Term implements Serializable {
                 result = list;
             }
         }
-        con.close();
+        DatabaseCleanup.closeAll(resultSet, ps, con);
         return result;
     }
 
@@ -162,7 +172,7 @@ public class Term implements Serializable {
         }
 
         ps = con.prepareStatement(
-                "SELECT DISTINCT term_synonym, acc FROM term_synonym JOIN term ON term_synonym.term_id = term.id WHERE term_synonym LIKE ?");
+                "SELECT DISTINCT term_synonym, acc FROM term_synonym JOIN term ON term_synonym.term_id = term.id WHERE term_synonym LIKE ? LIMIT 0,25");
         ps.setString(1, query + "%");
 
         result = ps.executeQuery();
@@ -176,10 +186,10 @@ public class Term implements Serializable {
             //store all data into a List
             list.add(term);
         }
+        DatabaseCleanup.closeAll(result, ps, con);
 
         //Too much data
         if (list.size() > 20) list.clear();
-        con.close();
         return list;
     }
 
@@ -191,14 +201,20 @@ public class Term implements Serializable {
     }
 
     public void fetchDescription(DataSource dataSource) {
+        PreparedStatement ps = null;
+        ResultSet resultSet = null;
+        Connection connection = null;
         try {
-            PreparedStatement ps = dataSource.getConnection().prepareStatement("select term_definition from hpo.term_definition where term_definition.term_id = '" + this.getId() + "'");
-            ResultSet resultSet = ps.executeQuery();
+            connection = dataSource.getConnection();
+            ps = connection.prepareStatement("select term_definition from hpo.term_definition where term_definition.term_id = '" + this.getId() + "'");
+            resultSet = ps.executeQuery();
             while (resultSet.next()) {
                 this.setDescription(resultSet.getString("term_definition"));
             }
         } catch (SQLException e) {
             e.printStackTrace();
+        } finally {
+            DatabaseCleanup.closeAll(resultSet, ps, connection);
         }
     }
 

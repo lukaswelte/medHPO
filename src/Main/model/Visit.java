@@ -1,6 +1,7 @@
 package Main.model;
 
 import Main.HPOController;
+import Main.helper.DatabaseCleanup;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
@@ -27,9 +28,13 @@ public class Visit {
 
     public static Visit getVisitWithId(int visitID, DataSource klinikDataSource) {
         Visit visit = null;
+        PreparedStatement ps = null;
+        ResultSet resultSet = null;
+        Connection connection = null;
         try {
-            PreparedStatement ps = klinikDataSource.getConnection().prepareStatement("SELECT id,  patient_id, date, symptoms, additional_text FROM visit  WHERE id = " + visitID);
-            ResultSet resultSet = ps.executeQuery();
+            connection = klinikDataSource.getConnection();
+            ps = connection.prepareStatement("SELECT id,  patient_id, date, symptoms, additional_text FROM visit  WHERE id = " + visitID);
+            resultSet = ps.executeQuery();
 
 
             while (resultSet.next()) {
@@ -37,16 +42,21 @@ public class Visit {
             }
         } catch (SQLException e) {
             e.printStackTrace();
+        } finally {
+            DatabaseCleanup.closeAll(resultSet, ps, connection);
         }
         return visit;
     }
 
     public static List<Visit> getAllVisits(DataSource klinikDataSource) {
         List<Visit> visits = null;
+        Connection connection = null;
+        PreparedStatement ps = null;
+        ResultSet resultSet = null;
         try {
-            Connection connection = klinikDataSource.getConnection();
-            PreparedStatement ps = connection.prepareStatement("SELECT id,  patient_id, date, symptoms, additional_text FROM visit");
-            ResultSet resultSet = ps.executeQuery();
+            connection = klinikDataSource.getConnection();
+            ps = connection.prepareStatement("SELECT id,  patient_id, date, symptoms, additional_text FROM visit");
+            resultSet = ps.executeQuery();
 
             visits = new ArrayList<>();
 
@@ -54,23 +64,29 @@ public class Visit {
                 visits.add(new Visit(resultSet.getInt(1), resultSet.getInt(2), resultSet.getString(3), resultSet.getString(4), resultSet.getString(5)));
             }
 
-            connection.close();
         } catch (SQLException e) {
             e.printStackTrace();
+        } finally {
+            DatabaseCleanup.closeAll(resultSet, ps, connection);
         }
         return visits;
     }
 
     public void saveToDatabase() {
+        Connection connection = null;
+        PreparedStatement preparedStatement = null;
+        ResultSet resultSet = null;
         try {
-            Connection connection = HPOController.getKlinikDataSource().getConnection();
-            PreparedStatement preparedStatement = connection.prepareStatement("UPDATE klinik.Visit SET additional_text=? WHERE klinik.Visit.id = ?");
+            connection = HPOController.getKlinikDataSource().getConnection();
+            preparedStatement = connection.prepareStatement("UPDATE klinik.Visit SET additional_text=? WHERE klinik.Visit.id = ?");
             preparedStatement.setString(1, getAdditionalText());
             preparedStatement.setInt(2, getId());
             preparedStatement.executeUpdate();
             connection.close();
         } catch (SQLException e) {
             e.printStackTrace();
+        } finally {
+            DatabaseCleanup.closeAll(null, preparedStatement, connection);
         }
     }
 
