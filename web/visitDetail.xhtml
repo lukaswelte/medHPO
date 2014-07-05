@@ -47,6 +47,10 @@
                         <h:outputText value="#{tag.description}"/>
                     </p:column>
 
+                    <p:column headerText="Words">
+                        <h:outputText value="#{tag.words}"/>
+                    </p:column>
+
                     <p:column headerText="Actions">
                         <h:commandButton value="Edit" action="#{visitDetail.editTermWithId(tag.id)}"/>
                         <h:commandButton value="Remove" action="#{visitDetail.deleteTermWithId(tag.id)}"/>
