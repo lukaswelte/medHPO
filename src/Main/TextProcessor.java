@@ -44,6 +44,17 @@ public class TextProcessor {
                     if (terms.size() == 1) {
                         hpoMatchList.add(terms.get(0));
                     } else {
+                        Boolean found = false;
+                        for (Term term : terms) {
+                            if (term.getName().equals(candidate.getWords()[0])) {
+                                hpoMatchList.add(term);
+                                found = true;
+                                break;
+                            }
+                        }
+                        if (!found) {
+                            hpoMatchList.add(terms.get(0));
+                        }
                         hpoMultipleMatchList.add(terms);
                     }
                 }
@@ -52,7 +63,7 @@ public class TextProcessor {
             }
         }
 
-        if ((hpoMatchList.size() > 0)) {
+        if (hpoMatchList.size() > 0) {
             hpoMatchList = Term.addDescriptionToTerms(hpoMatchList, hpoDataSource);
         }
 
