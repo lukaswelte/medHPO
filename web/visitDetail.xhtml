@@ -52,8 +52,8 @@
                     </p:column>
 
                     <p:column headerText="Actions">
-                        <h:commandButton value="Edit" action="#{visitDetail.editTermWithId(tag.id)}"/>
-                        <h:commandButton value="Remove" action="#{visitDetail.deleteTermWithId(tag.id)}"/>
+                        <h:commandButton value="Edit" action="#{visitDetail.editTerm(tag)}"/>
+                        <h:commandButton value="Remove" action="#{visitDetail.deleteTerm(tag)}"/>
                     </p:column>
                 </p:dataTable>
                 <h:commandButton value="Add" action="#{visitDetail.addNewTerm}"/>

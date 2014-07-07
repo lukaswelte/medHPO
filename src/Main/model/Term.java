@@ -17,6 +17,7 @@ public class Term implements Serializable {
     private String name;
     private String tag;
     private int id;
+    private long customID;
     private String description;
     private List<String> words;
 
@@ -48,6 +49,9 @@ public class Term implements Serializable {
     }
 
     public static Term getTermWithId(int id, DataSource dataSource) {
+        if (id == 0) {
+            return new Term();
+        }
         Term result = null;
         PreparedStatement preparedStatement = null;
         ResultSet resultSet = null;
@@ -219,6 +223,9 @@ public class Term implements Serializable {
     }
 
     public String getName() {
+        if (getCustomID() > 0) {
+            return "Custom Term";
+        }
         return name;
     }
 
@@ -264,5 +271,13 @@ public class Term implements Serializable {
     @Override
     public String toString() {
         return this.getName();
+    }
+
+    public long getCustomID() {
+        return customID;
+    }
+
+    public void setCustomID(long customID) {
+        this.customID = customID;
     }
 }

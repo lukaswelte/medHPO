@@ -23,6 +23,8 @@
         <h:panelGrid columns="2">
             Term:
             <h:inputText value="#{termNew.termID}"/>
+            Custom Term:
+            <h:selectBooleanCheckbox value="#{termNew.customTerm}"/>
             Selected Words:
             <p:pickList id="pickList" value="#{termNew.words}" var="words" itemLabel="#{words}" itemValue="#{words}"/>
 

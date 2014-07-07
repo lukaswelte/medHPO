@@ -24,6 +24,7 @@ public class TermNew {
     private int termID;
 
     private UIComponent saveButton;
+    private boolean customTerm;
 
     public UIComponent getSaveButton() {
         return saveButton;
@@ -83,14 +84,21 @@ public class TermNew {
     }
 
     public String save() {
-        Term term = Term.getTermWithId(getTermID(), hpoDataSource);
-        if (term == null) {
-            // invalid
-            FacesMessage message = new FacesMessage("Invalid HPO Term ID");
-            FacesContext context = FacesContext.getCurrentInstance();
-            context.addMessage(saveButton.getClientId(context), message);
-            return "#";
+        Term term;
+        if (getCustomTerm()) {
+            term = new Term();
+            term.setCustomID(System.currentTimeMillis() / 1000);
+        } else {
+            term = Term.getTermWithId(getTermID(), hpoDataSource);
+            if (term == null) {
+                // invalid
+                FacesMessage message = new FacesMessage("Invalid HPO Term ID");
+                FacesContext context = FacesContext.getCurrentInstance();
+                context.addMessage(saveButton.getClientId(context), message);
+                return "#";
+            }
         }
+
         term.setWords(words.getTarget());
         hpoInfo.saveTerm(term);
         return "/visitDetail.xhtml?faces-redirect=true&id=" + getVisitID();
@@ -98,5 +106,13 @@ public class TermNew {
 
     public String cancel() {
         return "/visitDetail.xhtml?faces-redirect=true&id=" + getVisitID();
+    }
+
+    public boolean getCustomTerm() {
+        return customTerm;
+    }
+
+    public void setCustomTerm(boolean customTerm) {
+        this.customTerm = customTerm;
     }
 }

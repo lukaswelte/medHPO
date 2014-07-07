@@ -22,6 +22,7 @@ public class TermEdit {
     private Term termToEdit;
     private DualListModel<String> words;
     private int termID;
+    private long customID;
     private Term selectedTerm;
 
     public int getTermID() {
@@ -30,6 +31,14 @@ public class TermEdit {
 
     public void setTermID(int termID) {
         this.termID = termID;
+    }
+
+    public long getCustomID() {
+        return customID;
+    }
+
+    public void setCustomID(long customID) {
+        this.customID = customID;
     }
 
     public int getVisitID() {
@@ -46,6 +55,7 @@ public class TermEdit {
         Map<String, String> requestParameterMap = FacesContext.getCurrentInstance().getExternalContext().getRequestParameterMap();
         visitID = new Integer(requestParameterMap.get("visit"));
         termID = new Integer(requestParameterMap.get("term"));
+        customID = new Long(requestParameterMap.get("customid"));
         hpoInfo = HPOInfo.getLastInfoForVisitWithId(visitID, klinikDataSource);
         if (hpoInfo != null) {
             List<Term> hpoMatches = hpoInfo.getHpoMatches();
@@ -53,7 +63,7 @@ public class TermEdit {
                 hpoMatches = new ArrayList<>();
             }
             for (Term term : hpoMatches) {
-                if (term.getId() == termID) {
+                if (term.getId() == termID && term.getCustomID() == customID) {
                     termToEdit = term;
                     selectedTerm = termToEdit;
                     break;

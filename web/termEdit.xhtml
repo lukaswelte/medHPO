@@ -10,6 +10,7 @@
 </h:head>
 <f:metadata>
     <f:viewParam name="term" value="#{termEdit.termID}" required="true"/>
+    <f:viewParam name="customid" value="#{termEdit.customID}" required="true"/>
     <f:viewParam name="visit" value="#{termEdit.visitID}" required="true"/>
     <f:event type="preRenderView" listener="#{termEdit.init}"/>
 </f:metadata>

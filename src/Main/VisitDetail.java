@@ -75,13 +75,17 @@ public class VisitDetail implements Serializable {
         return termDataModel;
     }
 
-    public String deleteTermWithId(Integer termID) {
-        hpoInfo.removeMatchedTermWithId(termID);
+    public String deleteTerm(Term term) {
+        if (term.getId() > 0) {
+            hpoInfo.removeMatchedTermWithId(term.getId());
+        } else {
+            hpoInfo.removeMatchedTermWithCustomID(term.getCustomID());
+        }
         return "/visitDetail.xhtml?faces-redirect=true&id=" + getVisitID();
     }
 
-    public String editTermWithId(Integer termID) {
-        return "/termEdit.xhtml?faces-redirect=true&visit=" + getVisitID() + "&term=" + termID;
+    public String editTerm(Term term) {
+        return "/termEdit.xhtml?faces-redirect=true&visit=" + getVisitID() + "&term=" + term.getId() + "&customid=" + term.getCustomID();
     }
 
     public String addNewTerm() {
@@ -134,7 +138,7 @@ class TermDataModel extends ListDataModel<Term> implements SelectableDataModel<T
         List<Term> terms = (List<Term>) getWrappedData();
 
         for (Term term : terms) {
-            if (("" + term.getId()).equals(rowKey))
+            if (("" + term.getId() + "" + term.getCustomID()).equals(rowKey))
                 return term;
         }
 
@@ -142,6 +146,6 @@ class TermDataModel extends ListDataModel<Term> implements SelectableDataModel<T
     }
 
     public Object getRowKey(Term term) {
-        return "" + term.getId();
+        return "" + term.getId() + "" + term.getCustomID();
     }
 }

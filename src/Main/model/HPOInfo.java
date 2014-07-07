@@ -73,7 +73,14 @@ public class HPOInfo {
 
                     DataSource hpoDataSource = HPOController.getHpoDataSource();
                     if (hpoDataSource != null) {
-                        Term term = Term.getTermWithId(resultSet.getInt("term_id"), hpoDataSource);
+                        Term term;
+                        int term_id = resultSet.getInt("term_id");
+                        if (term_id > 0) {
+                            term = Term.getTermWithId(term_id, hpoDataSource);
+                        } else {
+                            term = new Term();
+                        }
+                        term.setCustomID(resultSet.getLong("custom_id"));
                         term.setWords(wordList);
                         terms.add(term);
                     }
@@ -166,8 +173,8 @@ public class HPOInfo {
             }
 
             ps = connection.prepareStatement("INSERT INTO found_terms " +
-                    "(info_id, term_id)" +
-                    " VALUES (?,?)", Statement.RETURN_GENERATED_KEYS);
+                    "(info_id, term_id, custom_id)" +
+                    " VALUES (?,?,?)", Statement.RETURN_GENERATED_KEYS);
             PreparedStatement statement = connection.prepareStatement("INSERT INTO found_term_word " +
                     "(found_term, word)" +
                     " VALUES (?,?)");
@@ -177,6 +184,7 @@ public class HPOInfo {
             for (Term term : hpoMatches) {
                 ps.setInt(1, getId());
                 ps.setInt(2, term.getId());
+                ps.setLong(3, term.getCustomID());
                 affectedRows = ps.executeUpdate();
                 if (affectedRows == 0) {
                     throw new SQLException("Creating info failed, no rows affected.");
@@ -214,9 +222,17 @@ public class HPOInfo {
         ResultSet resultSet = null;
         try {
             connection = klinikDataSource.getConnection();
-            ps = connection.prepareStatement("SELECT id FROM found_terms WHERE info_id=? AND term_id=?");
-            ps.setInt(1, getId());
-            ps.setInt(2, term.getId());
+            if (term.getId() > 0) {
+                ps = connection.prepareStatement("SELECT id FROM found_terms WHERE info_id=? AND term_id=?");
+                ps.setInt(1, getId());
+                ps.setInt(2, term.getId());
+
+            } else {
+                ps = connection.prepareStatement("SELECT id FROM found_terms WHERE info_id=? AND custom_id=?");
+                ps.setInt(1, getId());
+                ps.setLong(2, term.getCustomID());
+            }
+
             resultSet = ps.executeQuery();
             while (resultSet.next()) {
                 ps = connection.prepareStatement("DELETE FROM found_term_word WHERE found_term = ?");
@@ -264,8 +280,26 @@ public class HPOInfo {
         try {
             connection = HPOController.getKlinikDataSource().getConnection();
             preparedStatement = connection.prepareStatement("DELETE FROM found_terms WHERE info_id = ? AND term_id = ?");
+
             preparedStatement.setInt(1, getId());
             preparedStatement.setInt(2, termID);
+            preparedStatement.executeUpdate();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        } finally {
+            DatabaseCleanup.closeAll(null, preparedStatement, connection);
+        }
+    }
+
+    public void removeMatchedTermWithCustomID(long customID) {
+        PreparedStatement preparedStatement = null;
+        Connection connection = null;
+        try {
+            connection = HPOController.getKlinikDataSource().getConnection();
+            preparedStatement = connection.prepareStatement("DELETE FROM found_terms WHERE info_id = ? AND custom_id = ?");
+
+            preparedStatement.setInt(1, getId());
+            preparedStatement.setLong(2, customID);
             preparedStatement.executeUpdate();
         } catch (SQLException e) {
             e.printStackTrace();
@@ -282,13 +316,14 @@ public class HPOInfo {
         try {
             connection = klinikDataSource.getConnection();
             ps = connection.prepareStatement("INSERT INTO found_terms " +
-                    "(info_id, term_id)" +
-                    " VALUES (?,?)", Statement.RETURN_GENERATED_KEYS);
+                    "(info_id, term_id, custom_id)" +
+                    " VALUES (?,?,?)", Statement.RETURN_GENERATED_KEYS);
             statement = connection.prepareStatement("INSERT INTO found_term_word " +
                     "(found_term, word)" +
                     " VALUES (?,?)");
             ps.setInt(1, getId());
             ps.setInt(2, term.getId());
+            ps.setLong(3, term.getCustomID());
             int affectedRows = ps.executeUpdate();
             if (affectedRows == 0) {
                 throw new SQLException("Creating info failed, no rows affected.");
