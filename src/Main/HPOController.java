@@ -38,8 +38,4 @@ public class HPOController implements Serializable {
         }
         return mKlinikDataSource;
     }
-
-    public String getProcessAllVisits() {
-        return "Processed all visits";
-    }
 }

@@ -14,9 +14,20 @@
     <h:form>
         <p:menubar autoDisplay="false">
             <p:menuitem value="Home" url="/index.xhtml" icon="ui-icon-home"/>
+            <p:menuitem value="Select Visit" url="/visitList.xhtml" icon="ui-icon-contact"/>
+            <p:menuitem value="Process All Visits" action="/processAllVisits.xhtml"/>
         </p:menubar>
 
-        <h:outputText value="#{HPOController.processAllVisits}"/>
+
+        <h:outputText id="output" value="#{processAll.processAllVisits}"/>
+
+        <br/>
+
+        <h:commandButton value="Process visits" action="#{processAll.action}">
+            <f:ajax execute="@this" render="output"/>
+        </h:commandButton>
+
+
     </h:form>
 
 </h:body>

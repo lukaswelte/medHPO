@@ -37,8 +37,9 @@ public class HPOInfo {
         ResultSet resultSet = null;
         try {
             klinikDataSourceConnection = klinikDataSource.getConnection();
-            preparedStatement = klinikDataSourceConnection.prepareStatement("SELECT * FROM klinik.HPOInfo WHERE visit_id = ? AND id IN (SELECT MAX(id) FROM klinik.HPOInfo)");
+            preparedStatement = klinikDataSourceConnection.prepareStatement("SELECT * FROM klinik.HPOInfo WHERE visit_id = ? AND id IN (SELECT MAX(id) FROM klinik.HPOInfo  WHERE visit_id=?)");
             preparedStatement.setInt(1, visitID);
+            preparedStatement.setInt(2, visitID);
             resultSet = preparedStatement.executeQuery();
             while (resultSet.next()) {
                 int hpoInfoId = resultSet.getInt("id");
