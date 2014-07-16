@@ -20,6 +20,8 @@ public class Term implements Serializable {
     private long customID;
     private String description;
     private List<String> words;
+    private String customName;
+    private String customDescription;
 
     public static String getSerializedObject(Object object) {
         String serializedObject = "";
@@ -204,6 +206,28 @@ public class Term implements Serializable {
         return terms;
     }
 
+    public String getCustomName() {
+        if (customName == null) {
+            return "";
+        }
+        return customName;
+    }
+
+    public void setCustomName(String customName) {
+        this.customName = customName;
+    }
+
+    public String getCustomDescription() {
+        if (customDescription == null) {
+            return "";
+        }
+        return customDescription;
+    }
+
+    public void setCustomDescription(String customDescription) {
+        this.customDescription = customDescription;
+    }
+
     public void fetchDescription(DataSource dataSource) {
         PreparedStatement ps = null;
         ResultSet resultSet = null;
@@ -224,7 +248,7 @@ public class Term implements Serializable {
 
     public String getName() {
         if (getCustomID() > 0) {
-            return "Custom Term";
+            return getCustomName();
         }
         return name;
     }
@@ -250,6 +274,9 @@ public class Term implements Serializable {
     }
 
     public String getDescription() {
+        if (getCustomID() > 0) {
+            return getCustomDescription();
+        }
         return description;
     }
 

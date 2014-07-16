@@ -82,6 +82,8 @@ public class HPOInfo {
                             term = new Term();
                         }
                         term.setCustomID(resultSet.getLong("custom_id"));
+                        term.setCustomName(resultSet.getString("custom_name"));
+                        term.setCustomDescription(resultSet.getString("custom_description"));
                         term.setWords(wordList);
                         terms.add(term);
                     }
@@ -174,8 +176,8 @@ public class HPOInfo {
             }
 
             ps = connection.prepareStatement("INSERT INTO found_terms " +
-                    "(info_id, term_id, custom_id)" +
-                    " VALUES (?,?,?)", Statement.RETURN_GENERATED_KEYS);
+                    "(info_id, term_id, custom_id, custom_name, custom_description)" +
+                    " VALUES (?,?,?,?,?)", Statement.RETURN_GENERATED_KEYS);
             PreparedStatement statement = connection.prepareStatement("INSERT INTO found_term_word " +
                     "(found_term, word)" +
                     " VALUES (?,?)");
@@ -186,6 +188,8 @@ public class HPOInfo {
                 ps.setInt(1, getId());
                 ps.setInt(2, term.getId());
                 ps.setLong(3, term.getCustomID());
+                ps.setString(4, term.getCustomName());
+                ps.setString(5, term.getCustomDescription());
                 affectedRows = ps.executeUpdate();
                 if (affectedRows == 0) {
                     throw new SQLException("Creating info failed, no rows affected.");
@@ -317,14 +321,16 @@ public class HPOInfo {
         try {
             connection = klinikDataSource.getConnection();
             ps = connection.prepareStatement("INSERT INTO found_terms " +
-                    "(info_id, term_id, custom_id)" +
-                    " VALUES (?,?,?)", Statement.RETURN_GENERATED_KEYS);
+                    "(info_id, term_id, custom_id, custom_name, custom_description)" +
+                    " VALUES (?,?,?,?,?)", Statement.RETURN_GENERATED_KEYS);
             statement = connection.prepareStatement("INSERT INTO found_term_word " +
                     "(found_term, word)" +
                     " VALUES (?,?)");
             ps.setInt(1, getId());
             ps.setInt(2, term.getId());
             ps.setLong(3, term.getCustomID());
+            ps.setString(4, term.getCustomName());
+            ps.setString(5, term.getCustomDescription());
             int affectedRows = ps.executeUpdate();
             if (affectedRows == 0) {
                 throw new SQLException("Creating info failed, no rows affected.");

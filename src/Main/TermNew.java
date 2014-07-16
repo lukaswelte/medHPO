@@ -10,6 +10,7 @@ import javax.faces.bean.ViewScoped;
 import javax.faces.component.UIComponent;
 import javax.faces.context.FacesContext;
 import javax.sql.DataSource;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -23,8 +24,21 @@ public class TermNew {
     private DualListModel<String> words;
     private int termID;
 
+    private Term term;
+
     private UIComponent saveButton;
+
     private boolean customTerm;
+    private String customTermName;
+    private String customTermDescription;
+
+    public Term getTerm() {
+        return term;
+    }
+
+    public void setTerm(Term term) {
+        this.term = term;
+    }
 
     public UIComponent getSaveButton() {
         return saveButton;
@@ -58,7 +72,6 @@ public class TermNew {
         termID = new Integer(requestParameterMap.get("term"));
         hpoInfo = HPOInfo.getLastInfoForVisitWithId(visitID, klinikDataSource);
         if (hpoInfo != null) {
-            List<Term> hpoMatches = hpoInfo.getHpoMatches();
 
             String[] allWords = hpoInfo.getVisit().getAdditionalText().split("\\s+");
             List<String> selectedWords = new ArrayList<>();
@@ -88,14 +101,16 @@ public class TermNew {
         if (getCustomTerm()) {
             term = new Term();
             term.setCustomID(System.currentTimeMillis() / 1000);
+            term.setCustomName(getCustomTermName());
+            term.setCustomDescription(getCustomTermDescription());
         } else {
             term = Term.getTermWithId(getTermID(), hpoDataSource);
-            if (term == null) {
+            if (term == null || term.getId() == 0) {
                 // invalid
                 FacesMessage message = new FacesMessage("Invalid HPO Term ID");
                 FacesContext context = FacesContext.getCurrentInstance();
                 context.addMessage(saveButton.getClientId(context), message);
-                return "#";
+                return "/visitDetail.xhtml?faces-redirect=true&id=" + getVisitID();
             }
         }
 
@@ -114,5 +129,37 @@ public class TermNew {
 
     public void setCustomTerm(boolean customTerm) {
         this.customTerm = customTerm;
+    }
+
+    public List<Term> completeTerm(String query) {
+        List<Term> terms = new ArrayList<>();
+        try {
+            terms = Term.getTermStartingWithText(query, hpoDataSource);
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return terms;
+    }
+
+    public String getCustomTermName() {
+        if (customTermName == null) {
+            customTermName = "";
+        }
+        return customTermName;
+    }
+
+    public void setCustomTermName(String customTermName) {
+        this.customTermName = customTermName;
+    }
+
+    public String getCustomTermDescription() {
+        if (customTermDescription == null) {
+            customTermDescription = "";
+        }
+        return customTermDescription;
+    }
+
+    public void setCustomTermDescription(String customTermDescription) {
+        this.customTermDescription = customTermDescription;
     }
 }
