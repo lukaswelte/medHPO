@@ -30,11 +30,11 @@ slidenumbers: true
 # 2.1 Strukturierte Datenerfassung 
 - Schematische Daten
 - Je mehr Schema desto mehr Struktur
-- Verbessert Wiederverwendbarkeit und ist maschninenverarbeitbar
+- Verbessert Wiederverwend- und Maschninenverarbeitbarkeit
 
 ---
 # 2.1.1 Ontologie
-- Philosophie: Einteilung des Seienden under Möglichkeit
+- Philosophie: Einteilung des Seienden und der Möglichkeit
 - Informatik: Spezifizierung einer Konzeptionalisierung
     - Teilt Entitäten in Begriffe und Relationen
     
@@ -105,7 +105,7 @@ slidenumbers: true
 
 ---
 # 3.6 Daten Integrität
-- Nur lesender Zugriff auf HPO und klinik Datenbank
+- Nur lesender Zugriff auf HPO und Klinik Datenbank
 - Ermöglicht Plug and Play Applikation
 
 ---
@@ -171,3 +171,6 @@ slidenumbers: true
 # 5.3 Ausblick
 - Automatische Diagnoseerstellung aus Freitext
 - Präzise Epidemie Auswertung
+
+---
+# Vielen Dank für ihre Aufmerksamkeit
