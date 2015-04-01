@@ -1,4 +1,4 @@
-footer: Integration der Human Phenotype Ontology (HPO) in ein medizinisches Forschungsnetz - Lukas Welte
+footer: Integration der Human Phenotype Ontology (HPO) in ein medizinisches Forschungsnetz
 slidenumbers: true
 
 # Integration der Human Phenotype Ontology (HPO) in ein medizinisches Forschungsnetz
@@ -14,36 +14,47 @@ slidenumbers: true
 1. Fazit
 
 ---
-
+![](zettelhaufen.jpg)
 # 1. Motivation
-- Viele potentielle Daten in Freitexten
-- Keine Kontrolle der Freitexte
+- Notizen werden gemacht
+	→ potentielle Daten
+- Kein Reviewprozess der Notizen
+	→ Informationsverlust
+	
+^ Für Maschine nicht lesbar.
+Beispiel: Visitendaten und automatische Krankheitsextraktion (phenomizer Charite)
 
 ---
 # 2. Datenerfassung in der medizinischen Forschung
-1. Strukturierte Datenerfassung
-   1. Ontologie
-   1. Natural Language Processing
-1. Freitext Datenerfassung
 
 ---
+![](haken.jpg)
 # 2.1 Strukturierte Datenerfassung 
 - Schematische Daten
 - Je mehr Schema desto mehr Struktur
 - Verbessert Wiederverwend- und Maschninenverarbeitbarkeit
+- z.B. Relationale Datenbanken, Fragebögen
 
 ---
+![right 130%](ontologiebsp.jpg)
 # 2.1.1 Ontologie
 - Philosophie: Einteilung des Seienden und der Möglichkeit
 - Informatik: Spezifizierung einer Konzeptionalisierung
     - Teilt Entitäten in Begriffe und Relationen
     
 ---
+![right](hpodiagram.pdf)
 # 2.1.1 Ontologie - Human Phenotype Ontology
 - Phänotypische Abnormalitäten
 - Integriert vorhandene Ontologien
 - mehr als 11000 Terme
 - über 115000 Annotationen
+
+---
+# 2.1.1 Ontologie - Human Phenotype Ontology
+![inline 200%](hpodiagram.pdf)
+
+^ Rausnehmen/ersetzen da keine Hierarchie abgebildet
 
 ---
 # 2.1.2 Natural Language Processing
@@ -60,6 +71,7 @@ slidenumbers: true
 1. Dialog und Diskursanalyse
 
 ---
+![right](freitext.jpg)
 # 2.2 Freitext Datenerfassung
 - Gegenteil der Strukturierten Datenerfassung
 - Einfache Erfassung
@@ -67,12 +79,12 @@ slidenumbers: true
  
 ---
 # 3. Anforderungen
-1. Visitenbrowser
-1. Visiten Detail
-1. Term Editor
-1. Daten Auswertung
-1. Deidentifizierung der Daten
-1. Daten Integrität
+ 
+---
+# 3. Anforderungen
+Annahme:
+	- Visiten der Patienten sind vorhanden
+	- Visiten enthalten u.a. Symptome und Freitext
 
 ---
 ![](visitenoverview.png)
@@ -110,11 +122,6 @@ slidenumbers: true
 
 ---
 # 4. Implemetierung
-1. Technologiestack
-1. Termsuche
-1. Persistierung
-1. Demo
-1. Probleme
 
 ---
 # 4.1 Technologiestack
@@ -131,13 +138,41 @@ slidenumbers: true
 1. Trefferauswertung
 
 ---
-# 4.3 Persistierung
-- In Programmeigener Datenbank gespeichert
-- Ein Datensatz je Analysedurchlauf
-
-^ Datenbanken Diagramm
+# 4.2.1 Filtern von Elementen
+Heute morgen hatte der Patient starkes Nasenbluten und seine Hand zuckte.
 
 ---
+# 4.2.1 Filtern von Elementen
+~~__Heute morgen hatte__~~ der Patient starkes Nasenbluten ~~__und__~~ seine Hand zuckte.
+
+^ Unnütze Worte wie Konjunktionen werden gestrichen
+
+---
+# 4.2.2 Gruppierung von Elementen
+- der Patient starkes Nasenbluten 
+- seine Hand zuckte
+
+---
+# 4.2.3 Suche in der HPO
+- seine Hand zuckte
+	- seine
+	- hand
+	- zuckte
+	
+→ Alle Permutationen
+
+---
+# 4.2.4 Trefferauswertung
+- Qualität bestimmt durch die Anzahl der Wörter in der Suche, in Relation mit Anzahl der im Term passenden Wörtern
+
+---
+![right fit](dbschema.png)
+# 4.3 Persistierung
+- In Programmeigener Datenbank gespeichert
+- Ein Datensatz (HPOInfo) je Analysedurchlauf
+
+---
+![](visitenoverview.png)
 # 4.4 Demo
 
 ---
@@ -150,9 +185,6 @@ slidenumbers: true
 
 ---
 # 5. Fazit
-1. Ergebnis
-1. Verbesserungsmöglichkeiten
-1. Ausblick
 
 ---
 # 5.1 Ergebnis
@@ -174,3 +206,11 @@ slidenumbers: true
 
 ---
 # Vielen Dank für ihre Aufmerksamkeit
+
+---
+# Referenzen
+
+[haken.jpg](http://www.apfelpage.de/wp-content/uploads/2012/02/6920F74F-43A6-463D-BBED-6DCE2939C729.jpg)
+[ontologiebsp.jpg](http://www.mpg.de/5597076/zoom.jpg)
+[freitext.jpg](http://www.wz-newsline.de/polopoly_fs/1.1281451.1364838482!/httpImage/onlineImage.jpg_gen/derivatives/landscape_550/onlineImage.jpg)
+[zettelhaufen.jpg](http://blogs.salesforce.com/.a/6a00e54ee3905b8833019aff5190f4970b-pi)
