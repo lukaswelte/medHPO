@@ -128,7 +128,7 @@ Annahme:
 - Ermöglicht Plug and Play Applikation
 
 ---
-# 4. Implemetierung
+# 4. Implementierung
 
 ---
 # 4.1 Technologiestack
