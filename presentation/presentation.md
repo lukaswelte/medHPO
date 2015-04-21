@@ -16,6 +16,7 @@ slidenumbers: true
 ---
 ![](zettelhaufen.jpg)
 # 1. Motivation
+- Standardisierung durch HPO
 - Notizen werden gemacht
 	→ potentielle Daten
 - Kein Reviewprozess der Notizen
@@ -43,18 +44,11 @@ Beispiel: Visitendaten und automatische Krankheitsextraktion (phenomizer Charite
     - Teilt Entitäten in Begriffe und Relationen
     
 ---
-![right](hpodiagram.pdf)
 # 2.1.1 Ontologie - Human Phenotype Ontology
 - Phänotypische Abnormalitäten
 - Integriert vorhandene Ontologien
 - mehr als 11000 Terme
 - über 115000 Annotationen
-
----
-# 2.1.1 Ontologie - Human Phenotype Ontology
-![inline 200%](hpodiagram.pdf)
-
-^ Rausnehmen/ersetzen da keine Hierarchie abgebildet
 
 ---
 # 2.1.2 Natural Language Processing
@@ -69,6 +63,18 @@ Beispiel: Visitendaten und automatische Krankheitsextraktion (phenomizer Charite
 1. Syntaktische Analyse
 1. Semantische Analyse
 1. Dialog und Diskursanalyse
+
+^ Sprach: Übersetzung von physikalisch in digitales (Audio -> Text)
+
+^ Token: Text in Sätze (anhand der Satzzeichen) und Worte segmentiert
+
+^ Morpho: Personalformen und Fälle
+
+^ Syntakt: Strukturelle Funktion -> Subjekt, Objekt, Artikel, etc.
+
+^ Seman: Beudeutung von teilen von oder ganzen Sätzen
+
+^ Dialog: Beziehungen zwischen einzelnen Sätzen
 
 ---
 ![right](freitext.jpg)
@@ -104,6 +110,7 @@ Annahme:
 ![](addterm.png)
 # 3.3 Visiten Editor
 - Zuordnen von Wörtern zu einem Term
+- Erstellen in der HPO nicht vorhandener Terme
 
 ---
 # 3.4 Daten Auswertung
